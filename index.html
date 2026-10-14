@@ -29,6 +29,8 @@ img{max-width:100%}
 .tabbar button.on{background:var(--bulb);color:#241a00;border-color:var(--bulb)}
 .tbadge{position:absolute;top:8px;right:12px;width:12px;height:12px;border-radius:50%;background:var(--hot);box-shadow:0 0 0 3px var(--bg);animation:bulbs 1s steps(2) infinite}
 #app.hyb{padding-bottom:96px}
+.spec .btn,.spec .cfgcard,.spec [data-act],.spec label:has(#cdbl){display:none!important}
+.spec .tile{pointer-events:none}
 .bigcode{font-family:var(--display);font-size:3.2rem;letter-spacing:.2em;color:var(--bulb);line-height:1}
 [hidden]{display:none!important}
 body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;-webkit-tap-highlight-color:transparent}
@@ -297,7 +299,7 @@ const pick=a=>a[Math.floor(Math.random()*a.length)];
 const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 const store={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 const app=$('#app');
-let INTRO=null,PR=null,HYBRID=false,PNET=null,TAB='play';
+let INTRO=null,PR=null,SPEC=false,HYBRID=false,PNET=null,TAB='play';
 const HV=()=>HYBRID?($('#hostView')||app):app,PV=()=>HYBRID?($('#playView')||app):app;
 let AC=null;
 function audio(){try{if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume()}catch(e){}return AC}
@@ -440,6 +442,7 @@ function makeHostNet(code,onStatus){
     on(t,h){(lh[t]=lh[t]||[]).push(h)},onConnection(f){setTimeout(()=>f(true),0)},emit:async()=>{}};
   tryBroker(store.get('pb_broker',0)||0);
   return{code:()=>cur,local,peers:()=>[...map.values()],presence:async()=>{},onPeers(cb){cbs.push(cb)},
+    live(o){if(cli&&cli.connected){try{cli.publish(TOPIC(cur)+'/lv',JSON.stringify(o),{qos:0})}catch(e){}}},
     emit:async(t,d)=>{if(t!=='st')return;lastEmit=JSON.stringify(d);publish();const copy=lastEmit;setTimeout(()=>{(lh.st||[]).forEach(h=>{try{h({data:JSON.parse(copy)})}catch(e){}})},0)}};
 }
 function makePlayerNet(code,b){
@@ -460,6 +463,35 @@ function makePlayerNet(code,b){
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){if(cli&&!cli.connected){try{cli.reconnect()}catch(e){}}else pub()}});
   return{code,presence(patch){Object.assign(pres,patch);pres.pid=getPid();pub();return Promise.resolve()},on(t,h){(hs[t]=hs[t]||[]).push(h)},onConnection(f){cc.push(f);setTimeout(()=>f(ok),0)},emit:async()=>{}};
 }
+function makeSpecNet(code,b){
+  const hs={};let cli=null,got=false,bi=0,list=[];
+  const start=i=>{
+    bi=((i%BROKERS.length)+BROKERS.length)%BROKERS.length;NET_B=bi;const B=BROKERS[bi];got=false;
+    const c=mqtt.connect(B.url,MQOPT(Object.assign({clientId:'yh-s-'+rid()},B.opt)));cli=c;
+    c.on('connect',()=>{c.subscribe([TOPIC(code)+'/st',TOPIC(code)+'/lv']);if(H){H.net='ok';schedRender()}});
+    c.on('offline',()=>{if(cli===c&&H){H.net='re';schedRender()}});
+    c.on('message',(t,buf)=>{if(cli!==c)return;let d;try{d=JSON.parse(buf.toString())}catch(e){return}if(!d||typeof d!=='object')return;
+      const k=t.endsWith('/st')?'st':t.endsWith('/lv')?'lv':null;if(!k)return;if(k==='st'&&!got){got=true;NETINFO.nohost=false}(hs[k]||[]).forEach(h=>h(d))});
+    setTimeout(()=>{if(cli===c&&!got){NETINFO.nohost=true;specWait();if(b==null){try{c.end(true)}catch(e){}start(bi+1)}}},8000);
+  };
+  start(b==null?0:b);
+  return{code:()=>code,on(k,h){(hs[k]=hs[k]||[]).push(h)},peers:()=>list,setPeers(x){list=x},presence:async()=>{},emit:async()=>{},onPeers(){}};
+}
+function startSpectator(code,b){
+  SPEC=true;app.classList.add('spec');
+  H={cfg:{teams:4,games:ORDER.slice(),mini:'',fin:'',dbl:false},taps:{},raf:0,net:'wait',qr:null,qrFor:null,confirmReset:false};
+  room=makeSpecNet(code,b);
+  room.on('st',d=>{const prev=S;S=d;H.cfg.games=Array.isArray(d.gl)?d.gl:ORDER.slice();specFx(prev,d);schedRender()});
+  room.on('lv',d=>{if(!d||!d.on||typeof d.on!=='object')return;const now=Date.now();room.setPeers(Object.entries(d.on).map(([pid,v])=>({presence:{pid,n:Array.isArray(v)?String(v[0]).slice(0,12):'??',a:Array.isArray(v)&&v[1]&&typeof v[1]==='object'?v[1]:null},updatedAt:now})));schedRender()});
+  setInterval(()=>{document.querySelectorAll('[data-cd]').forEach(el=>{const end=+el.dataset.cd;const x=Math.max(0,Math.ceil((end-Date.now())/1000));el.textContent=x>=60?Math.floor(x/60)+':'+String(x%60).padStart(2,'0'):x+'초'})},250);
+  keepAwake();specWait();
+}
+function specFx(prev,d){if(!prev)return;
+  if(d.ph==='res'&&prev.ph!=='res')fanfare();
+  if(d.ph==='pen'&&prev.ph!=='pen')womp();
+  if(d.ph==='play'&&d.g==='bomb'&&d.d&&d.d.st==='boom'&&!(prev.d&&prev.d.st==='boom'))boom();
+  if(d.ph==='play'&&prev.ph!=='play')beep(990,.15,'square');}
+function specWait(){if(S||!SPEC)return;app.innerHTML=`<div class="wrap"><div class="marquee"><div class="hdr"><div><div class="label">관전 모드 · 방 코드 ${esc(room&&room.code())}</div><h1>${NETINFO.nohost?'방을 찾는 중…':'연결 중…'}</h1></div></div>${castHTML()}</div><p class="muted" style="text-align:center">${NETINFO.nohost?'방장 폰이나 진행 화면이 켜져 있는지 확인하세요. 자동으로 다시 시도합니다.':'잠시만 기다려 주세요.'}</p></div>`}
 const NETINFO={nohost:false};
 function pRefreshWait(){if(P&&P.joined&&!P.S&&!PR)pRender()}
 
@@ -469,7 +501,7 @@ const QS=new URLSearchParams(location.search);
 const ROOMCODE=(QS.get('room')||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
 const ROOMB=QS.has('b')?(+QS.get('b')||0):null;
 const netOK=()=>typeof mqtt!=='undefined';
-setTimeout(()=>{if(ROOMCODE&&netOK()){room=makePlayerNet(ROOMCODE,ROOMB);startPlayer()}else renderIntro()},0);
+setTimeout(()=>{if(ROOMCODE&&netOK()&&QS.has('watch'))startSpectator(ROOMCODE,ROOMB);else if(ROOMCODE&&netOK()){room=makePlayerNet(ROOMCODE,ROOMB);startPlayer()}else renderIntro()},0);
 
 function tileArt(k,i){return `<div class="art">${chr(Object.assign({c:TC[i%4],id:k+'x'},ART[k]))}</div>`}
 function lineupHTML(){return `<div class="label">게임 목록 · 탭하면 혼자 연습해 볼 수 있어요</div><div class="tiles">${ORDER.map((k,i)=>`<button class="tile" data-pg="${k}">${tileArt(k,i)}<span class="tk">${GAMES[k].k} · 연습하기</span><span class="tn">${GAMES[k].n}</span><span class="td">${esc(GAMES[k].rules[0])}</span></button>`).join('')}</div>`}
@@ -481,15 +513,16 @@ function renderIntro(){
   <div class="marquee"><div class="hdr"><div><div class="label">8인 야유회용 · 계정 없이 QR로 참가하는 미니게임 9종</div><h1>야유회 파티박스</h1></div>
   <div class="row">${ok?`<button class="btn go big" id="bmk">방 만들기</button><button class="btn big" id="bh">TV·노트북 진행 화면</button>`:`<span class="pill">연결 모듈을 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침하세요.</span>`}</div></div>${castHTML()}</div>
   ${ok?`<form class="card row" id="mkf" hidden style="justify-content:space-between"><label class="label" for="mknick">방장 닉네임 · 방장도 같이 플레이해요</label><div class="row" style="flex:1;min-width:240px;justify-content:flex-end"><input type="text" id="mknick" maxlength="12" placeholder="예: 강선임" autocomplete="off" style="max-width:200px"><button class="btn go">만들기</button></div></form>`:''}
-  ${ok?`<form class="card row" id="jc" style="justify-content:space-between"><label class="label" for="jcode">참가자는 방장 폰의 QR을 찍거나, 방 코드를 입력하세요</label><div class="row" style="flex:1;min-width:240px;justify-content:flex-end"><input type="text" id="jcode" maxlength="6" placeholder="예: K7QMR" autocomplete="off" style="max-width:160px;text-transform:uppercase;font-family:var(--display);font-size:1.4rem;letter-spacing:.2em"><button class="btn go">입장</button></div></form>`:''}
+  ${ok?`<form class="card row" id="jc" style="justify-content:space-between"><label class="label" for="jcode">참가자는 방장 폰의 QR을 찍거나, 방 코드를 입력하세요</label><div class="row" style="flex:1;min-width:240px;justify-content:flex-end"><input type="text" id="jcode" maxlength="6" placeholder="예: K7QMR" autocomplete="off" style="max-width:160px;text-transform:uppercase;font-family:var(--display);font-size:1.4rem;letter-spacing:.2em"><button class="btn go">입장</button><button type="button" class="btn" id="jw">관전</button></div></form>`:''}
   <div class="card grid"><div class="label">진행 방법</div>
-  <ol class="rules"><li>한 명이 폰에서 <b>방 만들기</b>를 누르면 방장이 됩니다. 방장도 다른 사람과 똑같이 게임에 참여해요.</li><li>나머지는 방장 폰에 뜬 QR을 폰 카메라로 찍고 닉네임만 입력하면 입장합니다. 계정도 설치도 필요 없어요.</li><li>방장은 아래쪽 <b>방장 진행</b> 탭에서 팀을 나누고 게임을 고릅니다. 각 게임 순위대로 점수가 쌓여요.</li><li>TV나 노트북이 있다면 <b>TV·노트북 진행 화면</b>으로 크게 띄워 진행할 수도 있어요.</li><li>게임마다 꼴찌 팀은 가벼운 벌칙, 마지막엔 최종 벌칙(뒷정리·아침 준비 등)을 뽑습니다.</li></ol>
+  <ol class="rules"><li>한 명이 폰에서 <b>방 만들기</b>를 누르면 방장이 됩니다. 방장도 다른 사람과 똑같이 게임에 참여해요.</li><li>나머지는 방장 폰에 뜬 QR을 폰 카메라로 찍고 닉네임만 입력하면 입장합니다. 계정도 설치도 필요 없어요.</li><li>방장은 아래쪽 <b>방장 진행</b> 탭에서 팀을 나누고 게임을 고릅니다. 각 게임 순위대로 점수가 쌓여요.</li><li>TV나 노트북이 있다면 방 코드를 넣고 <b>관전</b>을 눌러 게임 현황을 크게 중계할 수 있어요. 진행까지 TV에서 하려면 <b>TV·노트북 진행 화면</b>을 쓰세요.</li><li>게임마다 꼴찌 팀은 가벼운 벌칙, 마지막엔 최종 벌칙(뒷정리·아침 준비 등)을 뽑습니다.</li></ol>
   <p class="muted" style="margin:0">인터넷만 되면 와이파이든 데이터든 상관없이 접속돼요.</p></div>
   ${lineupHTML()}</div>`;
   const bh=$('#bh');if(bh)bh.onclick=()=>{audio();startHost()};
   const bmk=$('#bmk'),mkf=$('#mkf');if(bmk)bmk.onclick=()=>{audio();mkf.hidden=false;const i=$('#mknick');i.value=store.get('pb_nick','');i.focus()};
   if(mkf)mkf.onsubmit=e=>{e.preventDefault();const n=$('#mknick').value.trim();if(n)startHybrid(n)};
   const jc=$('#jc');if(jc)jc.onsubmit=e=>{e.preventDefault();const v=$('#jcode').value.toUpperCase().replace(/[^A-Z0-9]/g,'');if(v.length>=4)location.href=location.origin+location.pathname+'?room='+v};
+  const jw=$('#jw');if(jw)jw.onclick=()=>{const v=$('#jcode').value.toUpperCase().replace(/[^A-Z0-9]/g,'');if(v.length>=4)location.href=location.origin+location.pathname+'?room='+v+'&watch=1';else $('#jcode').focus()};
   bindPractice(()=>renderIntro());
 }
 
@@ -508,6 +541,7 @@ function startHost(){
   room.presence({role:'host'}).catch(()=>{});
   room.onPeers(ch=>{if(ch.joined.length)broadcast();hostPeers();});
   setInterval(broadcast,2500);
+  setInterval(pushLive,3000);
   setInterval(hostTick,250);
   keepAwake();
   setS({});
@@ -527,7 +561,7 @@ function needsAction(){if(!S)return false;if(S.ph!=='play')return S.ph!=='lobby'
   if(['duel','stop','rhythm','mash'].includes(g)){const [k,n]=doneCount();return n>0&&k===n}
   if(g==='nunchi')return !!d.end;if(g==='quiz')return !!d.rev;return true}
 function updateTabs(){if(!HYBRID)return;const bar=$('#tabbar');if(!bar)return;bar.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('on',b.dataset.tab===TAB));const bd=$('#tbadge');if(bd)bd.hidden=!(TAB==='play'&&needsAction())}
-function setS(p){Object.assign(S,p);S.v++;store.set('pb_S',S);broadcast();hostRender()}
+function setS(p){if(SPEC)return;Object.assign(S,p);S.gl=H.cfg.games;S.v++;store.set('pb_S',S);broadcast();hostRender()}
 function broadcast(){if(room&&S)room.emit('st',S).catch(()=>{})}
 function saveCfg(){store.set('pb_cfg',H.cfg)}
 function online(){const m={};for(const p of room.peers()){const pr=p.presence||{};if(pr.role==='host'||typeof pr.pid!=='string')continue;const pid=pr.pid.slice(0,24);if(!m[pid]||p.updatedAt>m[pid].u)m[pid]={n:String(pr.n||'??').slice(0,12),a:pr.a&&typeof pr.a==='object'?pr.a:null,u:p.updatedAt}}return m}
@@ -536,11 +570,14 @@ function activePids(){const on=online();return Object.keys(S.pl).filter(pid=>S.p
 function inp(pid,on){const a=(on||online())[pid];return a&&a.a&&a.a.r===S.r?a.a:null}
 function tc(t){return t>=0?'t'+t:''}
 function hostPeers(){
+  if(SPEC)return;
   const on=online();let ch=false;
   for(const pid in S.pl){if(on[pid]&&on[pid].n!==S.pl[pid].n){S.pl[pid].n=on[pid].n;ch=true}}
   if(S.ph==='play'&&S.g==='nunchi')nunchiHost(on);
   if(ch)setS({});else schedRender();
+  pushLive();
 }
+function pushLive(){if(SPEC||!room||!room.live||!S||!H)return;const now=Date.now();if(H.lvT&&now-H.lvT<500){clearTimeout(H.lvTo);H.lvTo=setTimeout(pushLive,520);return}H.lvT=now;const on=online(),o={};for(const pid in on)o[pid]=[on[pid].n,on[pid].a&&on[pid].a.r===S.r?on[pid].a:null];room.live({r:S.r,on:o})}
 function schedRender(){if(H.raf)return;H.raf=requestAnimationFrame(()=>{H.raf=0;hostRender()})}
 
 function assignTeams(){
@@ -646,7 +683,7 @@ function qrFor(){const c=hostCode()+':'+NET_B;if(H.qrFor!==c){H.qrFor=c;H.qr=qrI
 function netPill(){return H.net==='ok'?'':`<span class="pill" style="border-color:var(--hot)">${H.net==='re'?'중계 서버 재접속 중…':'중계 서버 연결 중…'}</span>`}
 function hostHeader(){
   const on=online(),n=Object.keys(on).length;
-  return `<div class="marquee hdr"><div><div class="label">${S.ph==='lobby'?'대기실':S.g?GAMES[S.g].k+(S.dbl?' · 점수 2배':''):'점수판'}</div><h1>${S.g&&['intro','play','res'].includes(S.ph)?esc(GAMES[S.g].n):'야유회 파티박스'}</h1></div><div class="row">${netPill()}<span class="pill">방 코드 <b class="disp" style="letter-spacing:.15em;color:var(--bulb)">${esc(hostCode())}</b></span><span class="pill"><span class="dot" style="background:var(--ok)"></span>${n}명 접속</span>${S.done.length?`<span class="pill">${S.done.length}/${H.cfg.games.length} 게임 완료</span>`:''}</div></div>`;
+  return `<div class="marquee hdr"><div><div class="label">${S.ph==='lobby'?'대기실':S.g?GAMES[S.g].k+(S.dbl?' · 점수 2배':''):'점수판'}</div><h1>${S.g&&['intro','play','res'].includes(S.ph)?esc(GAMES[S.g].n):'야유회 파티박스'}</h1></div><div class="row">${SPEC?`<span class="pill">관전 중 · 탭하면 효과음 켜짐</span>${H.net==='ok'?'':netPill()}`:netPill()}<span class="pill">방 코드 <b class="disp" style="letter-spacing:.15em;color:var(--bulb)">${esc(hostCode())}</b></span><span class="pill"><span class="dot" style="background:var(--ok)"></span>${n}명 접속</span>${S.done.length?`<span class="pill">${S.done.length}/${H.cfg.games.length} 게임 완료</span>`:''}</div></div>`;
 }
 function hostRender(){
   if(!S||PR)return;
@@ -661,7 +698,7 @@ function hostRender(){
   else if(ph==='pen')body=hPen();
   else if(ph==='final')body=hFinal();
   HV().innerHTML=`<div class="wrap">${hostHeader()}${body}</div>`;
-  bindHost();updateTabs();
+  if(!SPEC)bindHost();updateTabs();
 }
 function hLobby(){
   const on=online(),c=H.cfg;
@@ -671,18 +708,19 @@ function hLobby(){
    ${qr?`<img src="${qr}" alt="참가용 QR 코드" width="260" height="260">`:''}
    <div class="bigcode">${esc(hostCode())}</div>
    <div class="muted" style="font-size:.9rem;overflow-wrap:anywhere">${esc(url)}</div>
+   <div class="muted" style="font-size:.85rem">TV 중계는 첫 화면에서 방 코드를 넣고 <b>관전</b>을 누르세요</div>
    ${local?'<p class="pill" style="border-color:var(--hot)">지금은 내 컴퓨터의 파일로 열려 있어요. GitHub Pages 주소로 열어야 폰에서 접속할 수 있어요.</p>':''}</div>
   <div class="card grid"><div class="label">참가자 (${Object.keys(on).length}명)</div>
    <p class="muted" style="margin:0">QR을 찍고 닉네임을 입력하면 캐릭터가 여기에 나타납니다. 링크를 단톡방에 보내도 돼요.</p>
    <div class="players">${Object.entries(on).map(([pid,p])=>`<div class="pc">${av(pid,-1,'happy')}<span class="n">${esc(p.n)}</span></div>`).join('')||'<span class="muted">아직 접속한 사람이 없어요</span>'}</div>
    ${HYBRID?'':'<button class="btn" data-act="practice">게임 연습 모드</button>'}
-   <div class="row"><span class="label">팀 수</span>${[2,4].map(k=>`<button class="btn ${c.teams===k?'go':''}" data-teams="${k}">${k}팀</button>`).join('')}</div>
+   <div class="row cfgcard"><span class="label">팀 수</span>${[2,4].map(k=>`<button class="btn ${c.teams===k?'go':''}" data-teams="${k}">${k}팀</button>`).join('')}</div>
    <button class="btn go big" data-act="assign" ${Object.keys(on).length<2?'disabled':''}>팀 나누기</button></div>
-  <div class="card grid"><div class="label">게임 구성 (탭해서 빼기/넣기)</div>
+  <div class="card grid cfgcard"><div class="label">게임 구성 (탭해서 빼기/넣기)</div>
    <div class="row">${ORDER.map(k=>`<button class="btn ${c.games.includes(k)?'go':''}" data-tg="${k}">${GAMES[k].n}</button>`).join('')}</div>
    <label class="row"><input type="checkbox" id="cdbl" ${c.dbl?'checked':''}> 마지막 게임 점수 2배</label></div>
-  <div class="card grid"><div class="label">게임별 꼴찌 벌칙 (한 줄에 하나)</div><textarea id="tmini">${esc(c.mini)}</textarea><span class="muted" style="font-size:.88rem">술이 어려운 분은 음료로 대신할 수 있다고 미리 안내해 주세요.</span></div>
-  <div class="card grid"><div class="label">최종 벌칙 (한 줄에 하나)</div><textarea id="tfin">${esc(c.fin)}</textarea></div></div>`;
+  <div class="card grid cfgcard"><div class="label">게임별 꼴찌 벌칙 (한 줄에 하나)</div><textarea id="tmini">${esc(c.mini)}</textarea><span class="muted" style="font-size:.88rem">술이 어려운 분은 음료로 대신할 수 있다고 미리 안내해 주세요.</span></div>
+  <div class="card grid cfgcard"><div class="label">최종 벌칙 (한 줄에 하나)</div><textarea id="tfin">${esc(c.fin)}</textarea></div></div>`;
 }
 function hTeams(){
   return `<div class="card grid"><div class="label">팀 배정 결과</div>${scoreHTML(true)}
