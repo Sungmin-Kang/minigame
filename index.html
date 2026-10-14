@@ -34,6 +34,19 @@ img{max-width:100%}
 .spec .lstage{grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:16px}
 .spec .lcard .ln{font-size:1.15rem}
 .spec .lbub{font-size:1.3rem}
+.vsbox{display:flex;flex-direction:column;gap:14px}
+.vsrow{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center}
+.vsside .lcard{max-width:260px;margin:0 auto}
+.vsside .lcard .ch{width:86%;max-width:200px}
+.vsmid{display:flex;flex-direction:column;align-items:center;gap:6px}
+.vsword{font-family:var(--display);font-size:clamp(2.4rem,9vw,5rem);color:var(--hot);-webkit-text-stroke:3px var(--ink);paint-order:stroke;line-height:1}
+.vsword.pop{animation:signpopb .5s cubic-bezier(.3,1.8,.6,1)}
+.vsscore{font-size:1.4rem;display:flex;gap:8px;flex-wrap:wrap}
+.vslist{display:grid;gap:6px}
+.vsli{display:grid;grid-template-columns:2em 1fr auto 1fr auto;gap:8px;align-items:center;background:var(--panel);border-radius:10px;padding:6px 10px;font-size:.95rem;min-width:0}
+.vsli>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vsli.cur{outline:2px solid var(--bulb)}.vsli.next{opacity:.6}
+.spec .vsside .lcard .ch{max-width:260px}.spec .vsli{font-size:1.1rem}
 .pill.live{background:var(--hot);color:#fff;border-color:var(--hot);font-weight:700;animation:bulbs 1s steps(2) infinite}
 .lstage{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:12px}
 .lcard{position:relative;background:var(--panel);border-radius:16px;padding:10px 8px 10px;display:flex;flex-direction:column;align-items:center;gap:2px;border-top:5px solid var(--tc);min-width:0;overflow:hidden}
@@ -453,7 +466,7 @@ function makeHostNet(code,onStatus){
     on(t,h){(lh[t]=lh[t]||[]).push(h)},onConnection(f){setTimeout(()=>f(true),0)},emit:async()=>{}};
   tryBroker(store.get('pb_broker',0)||0);
   return{code:()=>cur,local,peers:()=>[...map.values()],presence:async()=>{},onPeers(cb){cbs.push(cb)},
-    live(o){if(cli&&cli.connected){try{cli.publish(TOPIC(cur)+'/lv',JSON.stringify(o),{qos:0})}catch(e){}}},
+    live(o){const j=JSON.stringify(o);if(cli&&cli.connected){try{cli.publish(TOPIC(cur)+'/lv',j,{qos:0})}catch(e){}}setTimeout(()=>(lh.lv||[]).forEach(h=>{try{h({data:JSON.parse(j)})}catch(e){}}),0)},
     emit:async(t,d)=>{if(t!=='st')return;lastEmit=JSON.stringify(d);publish();const copy=lastEmit;setTimeout(()=>{(lh.st||[]).forEach(h=>{try{h({data:JSON.parse(copy)})}catch(e){}})},0)}};
 }
 function makePlayerNet(code,b){
@@ -463,8 +476,8 @@ function makePlayerNet(code,b){
   const start=i=>{
     bi=((i%BROKERS.length)+BROKERS.length)%BROKERS.length;const B=BROKERS[bi];got=false;
     const c=mqtt.connect(B.url,MQOPT(Object.assign({clientId:'yh-p-'+rid(),will:{topic:TOPIC(code)+'/p/'+pres.pid,payload:JSON.stringify({gone:true}),qos:0,retain:false}},B.opt)));cli=c;
-    c.on('connect',()=>{c.subscribe(TOPIC(code)+'/st');pub()});
-    c.on('message',(t,buf)=>{if(cli!==c||!t.endsWith('/st'))return;let d;try{d=JSON.parse(buf.toString())}catch(e){return}if(!d||typeof d!=='object')return;
+    c.on('connect',()=>{c.subscribe([TOPIC(code)+'/st',TOPIC(code)+'/lv']);pub()});
+    c.on('message',(t,buf)=>{if(cli!==c)return;if(t.endsWith('/lv')){let d;try{d=JSON.parse(buf.toString())}catch(e){return}(hs.lv||[]).forEach(h=>h({data:d}));return}if(!t.endsWith('/st'))return;let d;try{d=JSON.parse(buf.toString())}catch(e){return}if(!d||typeof d!=='object')return;
       if(!got){got=true;NETINFO.nohost=false}setOk(true);(hs.st||[]).forEach(h=>h({data:d}))});
     c.on('offline',()=>{if(cli===c)setOk(false)});c.on('close',()=>{if(cli===c)setOk(false)});
     setTimeout(()=>{if(cli===c&&!got){NETINFO.nohost=true;pRefreshWait();if(b==null){try{c.end(true)}catch(e){}start(bi+1)}}},8000);
@@ -569,6 +582,7 @@ function startHybrid(n){
 }
 function setTab(t){TAB=t;if(!HYBRID)return;const pv=$('#playView'),hv=$('#hostView');if(pv)pv.hidden=t!=='play';if(hv)hv.hidden=t!=='host';window.scrollTo(0,0);updateTabs()}
 function needsAction(){if(!S)return false;if(S.ph!=='play')return S.ph!=='lobby'||Object.keys(online()).length>1;const g=S.g,d=S.d||{};
+  if(d.vs)return d.vs.mst==='win'&&d.vs.mi>=d.vs.pairs.length-1;
   if(['duel','stop','rhythm','mash'].includes(g)){const [k,n]=doneCount();return n>0&&k===n}
   if(g==='nunchi')return !!d.end;if(g==='quiz')return !!d.rev;return true}
 function updateTabs(){if(!HYBRID)return;const bar=$('#tabbar');if(!bar)return;bar.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('on',b.dataset.tab===TAB));const bd=$('#tbadge');if(bd)bd.hidden=!(TAB==='play'&&needsAction())}
@@ -605,7 +619,7 @@ function addLate(){
 function unassigned(){const on=online();return Object.keys(on).filter(pid=>!S.pl[pid]||S.pl[pid].t<0)}
 
 function openGame(g){const left=H.cfg.games.filter(k=>!S.done.includes(k)&&k!==g);setS({ph:'intro',g,dbl:!!H.cfg.dbl&&left.length===0,res:null,pen:null,d:{}})}
-function startGame(){
+function startGame(mode){
   const g=S.g,r=rid();let d={};
   if(g==='duel')d={ds:[0,1,2].map(()=>1500+Math.floor(Math.random()*3000))};
   if(g==='rhythm')d={p:Math.floor(Math.random()*RHY.length)};
@@ -614,6 +628,7 @@ function startGame(){
   if(g==='quiz')d={qs:shuffle(QUIZ.map((_,i)=>i)).slice(0,5),qi:0,rev:false,qt:Date.now()};
   if(g==='liar'){const cat=pick(Object.keys(LIAR)),ps=activePids();d={cat,w:Math.floor(Math.random()*LIAR[cat].length),liar:ps.length?pick(ps):null,st:'talk',tt:Date.now(),out:null}}
   if(g==='bomb')d={n:0,st:'ready',cat:pick(BOMB),loses:[]};
+  if(mode==='vs'&&VSG.includes(g)&&S.tm.length>=2){const pairs=makePairs();if(pairs.length){d.vs={pairs,mi:0,mst:'vs',at:Date.now(),res:[]};setS({ph:'play',r,d});return}}
   setS({ph:'play',r,d});
   if(HYBRID&&g!=='bomb')setTab('play');
 }
@@ -688,6 +703,7 @@ function hostTick(){
   if(!S)return;
   if(HYBRID)updateTabs();
   document.querySelectorAll('[data-cd]').forEach(el=>{const end=+el.dataset.cd;const s=Math.max(0,Math.ceil((end-Date.now())/1000));el.textContent=s>=60?Math.floor(s/60)+':'+String(s%60).padStart(2,'0'):s+'초'});
+  if(!SPEC)vsTick();
   if(S.ph==='play'&&S.g==='quiz'&&!S.d.rev){const on=online(),act=activePids();const all=act.length&&act.every(pid=>{const a=inp(pid,on);return a&&a.q&&a.q[S.d.qi]});if(all||Date.now()-S.d.qt>15500){S.d.rev=true;beep(880,.15);setS({})}}
   if(S.ph==='play'&&S.g==='bomb'&&S.d.st==='run'){const left=S.d.fuse-(Date.now()-S.d.t0);if(left<=0){S.d.st='boom';boom();setS({})}else{const iv=left>12000?900:left>5000?500:220;if(!H.lt||Date.now()-H.lt>iv){H.lt=Date.now();beep(1200,.04,'square',.18)}const b=$('.bombwrap');if(b)b.style.setProperty('--sp',(iv/1000)+'s')}}
 }
@@ -765,13 +781,14 @@ function heroHTML(g){
 function hIntro(){
   const g=GAMES[S.g];
   return `<div class="card grid">${heroHTML(S.g)}<div class="label">게임 방법 · 폰에도 같은 설명이 떠요</div><ol class="rules">${g.rules.map(r=>`<li>${esc(r)}</li>`).join('')}</ol>
-  <div class="row"><button class="btn go big" data-act="start">시작!</button><button class="btn" data-act="board">점수판으로</button></div></div>${scoreHTML(false)}`;
+  ${VSG.includes(S.g)?`<p class="muted" style="margin:0"><b>1:1 대결</b>은 양 팀에서 한 명씩 랜덤으로 맞붙어 한 경기씩 순서대로 진행해요. 이긴 경기가 많은 팀이 승리합니다.</p>`:''}
+  <div class="row">${VSG.includes(S.g)?`<button class="btn go big" data-act="startvs">1:1 대결로 시작</button><button class="btn big" data-act="start">다같이 동시에</button>`:`<button class="btn go big" data-act="start">시작!</button>`}<button class="btn" data-act="board">점수판으로</button></div></div>${scoreHTML(false)}`;
 }
 /* ---------- live stage: every player's character acting out their current play ---------- */
 const LIVEP={};
-function liveMark(pid,key){const now=Date.now(),e=LIVEP[pid];if(!e||e.key!==key||e.r!==S.r){LIVEP[pid]={key,t:now,r:S.r};if(e&&e.r===S.r){clearTimeout(liveMark.tm);liveMark.tm=setTimeout(()=>schedRender(),1400)}return e&&e.r===S.r}return now-e.t<1300}
-function liveCard(pid,a){
-  const g=S.g,d=S.d||{},t=S.pl[pid].t,base={c:TC[t],id:pid};let o={},cls='',bub='',cap='',bar=null;
+function liveMarkR(pid,key,r,rer){const now=Date.now(),e=LIVEP[pid];if(!e||e.key!==key||e.r!==r){LIVEP[pid]={key,t:now,r};if(e&&e.r===r){clearTimeout(liveMarkR.tm);liveMarkR.tm=setTimeout(()=>rer(),1400)}return e&&e.r===r}return now-e.t<1300}
+function liveCard(pid,a,X,rer){X=X||S;rer=rer||schedRender;const liveMark=(p,k)=>liveMarkR(p,k,X.r,rer);
+  const g=X.g,d=X.d||{},t=X.pl[pid].t,base={c:TC[t],id:pid};let o={},cls='',bub='',cap='',bar=null;
   if(g==='duel'){const ms=a&&Array.isArray(a.ms)?a.ms:[],last=ms[ms.length-1],fresh=liveMark(pid,ms.length);o={hat:'cowboy',holster:true,face:'focus'};cls='tremble';cap=ms.length?`${ms.length} / 3`:'대기';
     if(a&&a.done){const avg=Math.round(ms.reduce((x,y)=>x+y,0)/ms.length),good=avg<=420;o=Object.assign(o,{face:good?'happy':'cry',arms:good?'up':'down',drawn:true});cls=good?'jump':'';cap=`평균 ${avg}ms`}
     else if(fresh&&last!=null){if(last>=1000&&last<1500){o=Object.assign(o,{face:'shock',drawn:true,hatfly:true,smoke:true});cls='';bub='오발!'}else if(last<=380){o=Object.assign(o,{face:'smug',arms:'rfwd',hold:'gun',drawn:true,bang:true});cls='';bub=`탕! ${last}ms`}else{o=Object.assign(o,{face:'ko',stars:true,drawn:true});cls='fall';bub=`${last}ms`}}}
@@ -790,9 +807,62 @@ function liveCard(pid,a){
   else if(g==='liar'){const voted=a&&a.vote;o={hat:'detective',face:'focus'};cap=d.st==='vote'?(voted?'투표 완료':'고민 중…'):'';
     if(d.tally&&d.tally[pid])bub=`${d.tally[pid]}표`;
     if((d.st==='guess'||d.st==='done')&&pid===d.liar){o={hat:d.st==='guess'?undefined:'disguise',face:d.st==='guess'?'shock':d.out==='caught'?'cry':'smug',arms:d.out==='escaped'?'up':'down'};cap='라이어'}}
-  return `<div class="lcard ${tc(t)}">${bub?`<div class="lbub">${esc(bub)}</div>`:''}<div class="ch ${cls}">${chr(Object.assign(base,o))}</div><div class="ln">${esc(S.pl[pid].n)}</div><div class="lcap">${esc(cap)}</div>${bar!=null?`<div class="bar" style="width:100%;height:8px"><i style="width:${bar*100}%"></i></div>`:''}</div>`;
+  return `<div class="lcard ${tc(t)}">${bub?`<div class="lbub">${esc(bub)}</div>`:''}<div class="ch ${cls}">${chr(Object.assign(base,o))}</div><div class="ln">${esc(X.pl[pid].n)}</div><div class="lcap">${esc(cap)}</div>${bar!=null?`<div class="bar" style="width:100%;height:8px"><i style="width:${bar*100}%"></i></div>`:''}</div>`;
 }
 function liveStage(){const on=online();const ps=activePids().sort((x,y)=>S.pl[x].t-S.pl[y].t);if(!ps.length)return'';return `<div class="lstage">${ps.map(pid=>liveCard(pid,inp(pid,on))).join('')}</div>`}
+
+/* ---------- 1:1 versus mode (duel, mash, stop, rhythm): random cross-team pairs, played one match at a time ---------- */
+const VSG=['duel','mash','stop','rhythm'];
+const VS_MAX={duel:26000,mash:18000,stop:26000,rhythm:26000};
+function makePairs(){
+  const buckets=S.tm.map((_,t)=>shuffle(activePids().filter(p=>S.pl[p].t===t))).filter(b=>b.length);
+  const pairs=[],used=[];
+  while(buckets.filter(b=>b.length).length>=2){
+    const live=buckets.filter(b=>b.length).sort((x,y)=>y.length-x.length||Math.random()-.5);
+    const a=live[0].pop(),b=live[1].pop();pairs.push([a,b]);used.push(a,b);
+  }
+  // leftovers (uneven teams) get a bonus match against someone from another team
+  for(const b of buckets)while(b.length){const a=b.pop(),opp=shuffle(used.filter(p=>S.pl[p].t!==S.pl[a].t))[0];if(opp)pairs.push([a,opp])}
+  return pairs;
+}
+function vsFresh(d){if(S.g==='duel')d.ds=[0,1,2].map(()=>1500+Math.floor(Math.random()*3000));if(S.g==='rhythm')d.p=Math.floor(Math.random()*RHY.length)}
+function vsGo(){const v=S.d.vs;if(!v||v.mst!=='vs')return;vsFresh(S.d);v.mst='go';v.at=Date.now();setS({r:rid()});beep(990,.15,'square');
+  if(HYBRID&&(v.pairs[v.mi]||[]).includes(getPid()))setTab('play')}
+function vsJudge(){const v=S.d.vs;if(!v||v.mst!=='go')return;const on=online(),[a,b]=v.pairs[v.mi],g=S.g,dir=GAMES[g].dir;
+  const va=personal(g,a,on),vb=personal(g,b,on);let w=-1;
+  if(va!=null&&vb==null)w=0;else if(vb!=null&&va==null)w=1;else if(va!=null&&vb!=null&&va!==vb)w=(dir==='low'?va<vb:va>vb)?0:1;
+  v.res[v.mi]=[va,vb,w];v.mst='win';v.at=Date.now();fanfare();setS({})}
+function vsNext(){const v=S.d.vs;if(!v||v.mst!=='win'||v.mi>=v.pairs.length-1)return;v.mi++;v.mst='vs';v.at=Date.now();setS({})}
+function vsTick(){if(S.ph!=='play'||!S.d||!S.d.vs)return;const v=S.d.vs,now=Date.now();
+  if(v.mst==='vs'&&now-v.at>4500)vsGo();
+  else if(v.mst==='go'){const on=online(),[a,b]=v.pairs[v.mi]||[];const da=inp(a,on),db=inp(b,on);if((da&&da.done&&db&&db.done)||now-v.at>VS_MAX[S.g])setTimeout(vsJudge,700)}
+  else if(v.mst==='win'&&now-v.at>5500&&v.mi<v.pairs.length-1)vsNext()}
+function vsWins(X){const v=X.d.vs,w=X.tm.map(()=>0);(v.res||[]).forEach((r,i)=>{if(!r||r[2]<0)return;const p=v.pairs[i][r[2]];if(X.pl[p])w[X.pl[p].t]++});return w}
+function finishVs(){
+  const g=S.g,v=S.d.vs,n=S.tm.length,dir=GAMES[g].dir,wins=vsWins(S),rows=[],tv=S.tm.map(()=>[]);
+  v.pairs.forEach(([a,b],i)=>{const r=v.res[i];if(!r)return;[a,b].forEach((p,k)=>{if(!S.pl[p])return;const t=S.pl[p].t;rows.push([S.pl[p].n,t,`${fmt(g,r[k])} · ${r[2]===k?'승':r[2]<0?'무':'패'}`]);if(r[k]!=null)tv[t].push(r[k])})});
+  const played=S.tm.map((_,t)=>v.pairs.some(pr=>pr.some(p=>S.pl[p]&&S.pl[p].t===t)));
+  const avg=tv.map(a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null);
+  const key=t=>!played[t]?-Infinity:wins[t]*1e7+(avg[t]==null?-1e6:(dir==='low'?-avg[t]:avg[t]));
+  const tr=S.tm.map((_,t)=>{const rank=1+S.tm.filter((__,u)=>key(u)>key(t)).length;let p=(PTS[n]||PTS[4])[rank-1]||0;if(!played[t])p=0;if(S.dbl)p*=2;return[t,`${wins[t]}승`,rank,p]});
+  const tm=S.tm.map((x,t)=>({n:x.n,s:x.s+tr[t][3]}));tr.sort((a,b)=>a[2]-b[2]);rows.sort((a,b)=>a[1]-b[1]);fanfare();
+  setS({ph:'res',tm,done:S.done.concat([g]),res:{rows:rows.slice(0,16),tr}});
+}
+// shared VS view: used by the host/TV, spectators and waiting phones. X = state, getA(pid) = live input, rer = re-render hook
+function vsHTML(X,getA,rer){
+  const v=X.d.vs,g=X.g,pr=v.pairs[v.mi]||[],wins=vsWins(X);
+  const side=(pid,idx)=>{if(!pid||!X.pl[pid])return'';const t=X.pl[pid].t,nm=esc(X.pl[pid].n),flip=idx===1;
+    if(v.mst==='go')return liveCard(pid,getA(pid),X,rer);
+    if(v.mst==='win'){const r=v.res[v.mi]||[null,null,-1],win=r[2]===idx,lose=r[2]===1-idx;
+      return `<div class="lcard ${tc(t)}"><div class="lbub">${esc(fmt(g,r[idx]))}</div><div class="ch ${win?'jump':lose?(flip?'fallr':'fall'):''}">${chr(Object.assign({c:TC[t],id:pid},ART[g],{face:win?'happy':lose?'ko':'normal',arms:win?'up':'down',stars:lose,hat:win?'party':ART[g].hat,flip,drawn:true,popped:g==='mash'&&win}))}</div><div class="ln">${nm}</div><div class="lcap">${win?'승리!':lose?'패배':'무승부'}</div></div>`}
+    return `<div class="lcard ${tc(t)}"><div class="ch tremble">${chr(Object.assign({c:TC[t],id:pid},ART[g],{face:'focus',flip}))}</div><div class="ln">${nm}</div><div class="lcap">${esc(X.tm[t]?X.tm[t].n+'팀':'')}</div></div>`};
+  const score=X.tm.map((x,t)=>`<span class="${tc(t)}" style="color:var(--tc)">${esc(x.n)} <b class="num">${wins[t]}</b></span>`).join('<span class="muted"> : </span>');
+  const list=v.pairs.map(([a,b],i)=>{const r=v.res[i],cur=i===v.mi;const nm=p=>X.pl[p]?esc(X.pl[p].n):'?';const st=(k)=>r&&r[2]===k?' style="color:var(--bulb);font-weight:700"':'';
+    return `<div class="vsli ${cur?'cur':''} ${i>v.mi?'next':''}"><span class="num">${i+1}</span><span${st(0)}>${nm(a)}</span><span class="muted">vs</span><span${st(1)}>${nm(b)}</span><span class="muted num">${r?`${esc(fmt(g,r[0]))} : ${esc(fmt(g,r[1]))}`:cur?(v.mst==='go'?'대결 중':'준비'):''}</span></div>`}).join('');
+  return `<div class="vsbox"><div class="row" style="justify-content:space-between"><span class="label">${v.mi+1}경기 / ${v.pairs.length}</span><span class="disp vsscore">${score}</span></div>
+    <div class="vsrow"><div class="vsside">${side(pr[0],0)}</div><div class="vsmid"><div class="vsword ${v.mst==='vs'?'pop':''}">VS</div>${v.mst==='vs'?'<div class="muted">곧 시작!</div>':v.mst==='go'?'<span class="pill live">대결 중</span>':''}</div><div class="vsside">${side(pr[1],1)}</div></div>
+    <div class="vslist">${list}</div></div>`;
+}
 
 function progressCards(fn){
   const on=online(),hat=ART[S.g]&&ART[S.g].hat&&ART[S.g].hat!=='afro'?{hat:ART[S.g].hat}:{};
@@ -802,6 +872,8 @@ function doneCount(){const on=online(),act=activePids();return[act.filter(pid=>{
 function hPlay(){
   const g=S.g,d=S.d,on=online();
   const endBtn=`<button class="btn go big" data-act="finish">결과 집계</button><button class="btn" data-act="board">취소하고 점수판으로</button>`;
+  if(d&&d.vs){const v=d.vs,last=v.mi>=v.pairs.length-1;
+    return `<div class="card grid">${vsHTML(S,pid=>inp(pid,on))}<div class="row">${v.mst==='vs'?'<button class="btn go big" data-act="vsgo">지금 시작</button>':v.mst==='go'?'<button class="btn" data-act="vsjudge">이 경기 바로 판정</button>':last?'<button class="btn go big" data-act="finish">결과 집계</button>':'<button class="btn go big" data-act="vsnext">다음 경기</button>'}<button class="btn" data-act="board">취소하고 점수판으로</button></div>${!SPEC&&v.mst!=='go'&&!last?'<p class="muted" style="margin:0">경기는 자동으로 넘어가요. 버튼은 기다리기 싫을 때만 누르세요.</p>':''}</div>`}
   if(['duel','stop','rhythm'].includes(g)){
     const [k,n]=doneCount();
     return `<div class="card grid"><div class="stagebig">${k===n&&n?'모두 완료!':g==='duel'?'결투 진행 중!':g==='stop'?'다들 속으로 세는 중…':'쾅! 쾅! 쾅!'}</div><p class="muted" style="text-align:center;margin:0">완료 ${k} / ${n}명</p>
@@ -910,7 +982,11 @@ function bindHost(){
     if(a==='board'){H.confirmReset=false;setS({ph:'board',g:null,r:null,d:{}})}
     if(a==='late')addLate();
     if(a==='start')startGame();
-    if(a==='finish')finishGame();
+    if(a==='startvs')startGame('vs');
+    if(a==='vsgo')vsGo();
+    if(a==='vsjudge')vsJudge();
+    if(a==='vsnext')vsNext();
+    if(a==='finish'){if(S.d&&S.d.vs)finishVs();else finishGame()}
     if(a==='nend')nunchiRecalc(true);
     if(a==='brev'){S.d.rev=true;S.d.cnt=balCount(S.d.qi,online());setS({})}
     if(a==='bnext'){S.d.qi++;S.d.rev=false;S.d.cnt=null;setS({})}
@@ -930,12 +1006,15 @@ function bindHost(){
 /* =========================================================
    PLAYER
    ========================================================= */
-let P=null;
+let P=null,PLV=null;const PLV_CB=new Set();
+function plvA(pid,s){return PLV&&PLV.r===s.r&&PLV.on&&Array.isArray(PLV.on[pid])?PLV.on[pid][1]:null}
+function playKey(s){if(!s||s.ph!=='play')return null;const v=s.d&&s.d.vs;if(!v)return s.r;return v.mst==='go'&&(v.pairs[v.mi]||[]).includes(P.pid)?s.r:'vsw'}
 function startPlayer(){
   const pid=getPid();
   P={pid,n:store.get('pb_nick',''),S:null,ep:null,v:-1,joined:false,game:null,key:null};
   PNET=PNET||room;
   PNET.on('st',m=>{const s=m.data;if(!s||typeof s!=='object'||!s.e)return;if(s.e===P.ep&&s.v<=P.v)return;P.ep=s.e;P.v=s.v;P.S=s;if(!HYBRID)watchSpin(s);pRender()});
+  PNET.on('lv',m=>{PLV=m.data;PLV_CB.forEach(f=>{try{f()}catch(e){}})});
   PNET.onConnection(c=>{P.conn=c;const el=$('#conn');if(el)el.hidden=c});
   if(P.n)join(P.n);else pRender();
 }
@@ -956,7 +1035,8 @@ function pRender(){
     ${HYBRID?'':'<button class="btn" id="prac">기다리는 동안 혼자 연습해 보기</button>'}</div>`;
     $('#jf').onsubmit=e=>{e.preventDefault();audio();join($('#nick').value)};const pb=$('#prac');if(pb)pb.onclick=()=>practiceMenu(()=>pRender());updateTabs();return;
   }
-  if(s&&s.ph==='play'&&P.game&&P.key===s.r){P.game.update&&P.game.update(s);return}
+  const pk=playKey(s);
+  if(pk&&P.game&&P.key===pk){P.game.update&&P.game.update(s);return}
   if(P.game){P.game.stop&&P.game.stop();P.game=null;P.key=null}
   const t=myTeam();const me=(o,cls)=>bigChr(Object.assign({c:TC[t>=0?t:0],id:P.pid},o),cls);
   let body='';
@@ -965,7 +1045,7 @@ function pRender(){
   else if(t<0&&s.ph!=='final')body=`<div class="card grid">${me({face:'sweat'})}<div class="disp" style="font-size:1.6rem;text-align:center">팀 배정 대기 중</div><p class="muted" style="margin:0;text-align:center">방장에게 팀 배정을 요청하세요.</p></div>`;
   else if(s.ph==='teams')body=`<div class="team ${tc(t)}" style="text-align:center;padding:24px">${me({face:'happy',arms:'up'},'jump')}<div class="label">당신의 팀</div><div class="pt" style="color:var(--tc);font-size:3.2rem">${esc(s.tm[t].n)}팀</div><div class="mem">${Object.values(s.pl).filter(p=>p.t===t).map(p=>esc(p.n)).join(' · ')}</div></div>`;
   else if(s.ph==='intro'){const g=GAMES[s.g];body=`<div class="card grid">${me(Object.assign({},ART[s.g]))}<div class="label">${g.k}${s.dbl?' · 점수 2배':''}</div><div class="disp" style="font-size:2rem;color:var(--bulb)">${g.n}</div><ol class="rules">${g.rules.map(r=>`<li>${esc(r)}</li>`).join('')}</ol><p class="muted" style="margin:0">방장이 시작하면 바로 시작됩니다.</p></div>`}
-  else if(s.ph==='play'){PV().innerHTML=`<div class="phone">${pTop()}<div id="gm" style="display:flex;flex-direction:column;gap:14px"></div></div>`;bindTop();P.key=s.r;P.game=(PG[s.g]||PG.watch)($('#gm'),s);updateTabs();return}
+  else if(s.ph==='play'){PV().innerHTML=`<div class="phone">${pTop()}<div id="gm" style="display:flex;flex-direction:column;gap:14px"></div></div>`;bindTop();P.key=pk;P.game=(pk==='vsw'?PG.vswatch:(PG[s.g]||PG.watch))($('#gm'),s);updateTabs();return}
   else if(s.ph==='res'){const row=s.res.tr.find(x=>x[0]===t),mx=Math.max(...s.res.tr.map(x=>x[2])),win=row&&row[2]===1,lose=row&&row[2]===mx&&mx>1;body=`<div class="team ${tc(t)}" style="text-align:center;padding:24px">${me({face:win?'happy':lose?'ko':'normal',arms:win?'up':'down',hat:win?'party':undefined,stars:lose},win?'jump':'')}<div class="label">${esc(GAMES[s.g].n)} 결과</div><div class="pt">${row?row[2]+'위':'—'}</div><div class="muted">${row?esc(row[1])+' · +'+row[3]+'점':''}</div></div>${pScore(s)}`}
   else if(s.ph==='pen'){const mine=s.pen.teams.includes(t);body=`<div class="card grid" style="text-align:center">${me({face:mine?'cry':'happy',arms:mine?'down':'up'})}<div class="label">${mine?'우리 팀 벌칙!':'벌칙 당첨 팀'}</div><div class="disp" style="font-size:1.6rem">${s.pen.teams.map(x=>esc(s.tm[x].n)+'팀').join(' · ')}</div><div class="disp" style="font-size:2.2rem;color:${mine?'var(--hot)':'var(--bulb)'}">${esc(s.pen.text)}</div></div>`}
   else if(s.ph==='final'){const f=s.fin.find(x=>x[0]===t);const order=s.tm.map((x,i)=>[i,x.s]).sort((a,b)=>b[1]-a[1]);const win=order.length&&order[0][0]===t;body=`<div class="card grid" style="text-align:center">${me({face:win?'happy':f?'cry':'sweat',arms:win?'up':'down',hat:win?'party':undefined},win?'jump':'')}<div class="label">최종 결과</div><div class="disp" style="font-size:2rem;color:var(--bulb)">${win?'우승! 벌칙 면제':f?esc(f[1]):'두근두근…'}</div><p class="muted" style="margin:0">${win?'축하합니다!':f?'우리 팀의 최종 벌칙입니다':'진행 화면을 보세요'}</p></div>${pScore(s)}`}
@@ -1163,6 +1243,12 @@ const PG={
   }
 };
 PG.bomb=PG.watch;
+PG.vswatch=function(el,s){let cur=s;
+  const draw=s2=>{cur=s2;const v=s2.d.vs;if(!v)return;const idx=v.pairs.findIndex((pr,i)=>i>=v.mi&&pr.includes(P.pid));
+    const hint=idx===v.mi&&v.mst==='vs'?'<b style="color:var(--bulb)">곧 내 차례! 폰을 잡고 준비하세요</b>':idx===v.mi&&v.mst==='win'?'내 경기 결과예요':idx>v.mi?`${idx-v.mi}경기 뒤에 내 차례예요`:'응원하세요!';
+    el.innerHTML=`<div class="card grid">${vsHTML(s2,pid=>plvA(pid,s2),()=>draw(cur))}<p class="muted" style="margin:0;text-align:center">${hint}</p></div>`;
+    if(idx===v.mi&&v.mst==='vs'&&draw.buzzed!==v.mi){draw.buzzed=v.mi;buzz();beep(660,.1,'square')}};
+  const f=()=>draw(cur);PLV_CB.add(f);draw(s);return{update:draw,stop(){PLV_CB.delete(f)}}};
 
 /* =========================================================
    PRACTICE (solo, bots fill other seats, no network)
