@@ -215,7 +215,7 @@ canvas{display:block;width:100%;max-width:100%;border-radius:24px;border:3px sol
 <div id="app"></div>
 <div id="ov" hidden><div class="card"><div class="label" id="ovl">벌칙 뽑기</div><div id="ova"></div><div id="ovt"></div><div id="ovs" class="muted"></div><div class="row" style="justify-content:center"><button class="btn go" id="ovb" hidden>확인</button></div></div></div>
 
-<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 /* ---------- data ---------- */
@@ -394,72 +394,72 @@ function bombSVG(st='ready'){
   return `<svg viewBox="0 0 200 200" aria-hidden="true"><path d="M120 48 q18 -30 40 -26" fill="none" stroke="#c9a06a" stroke-width="7" stroke-linecap="round"/>${st==='run'?`<g class="chr"><g class="spin">${star(162,22,12,'#ffd64d')}</g></g>`:''}<rect x="104" y="40" width="26" height="22" rx="4" fill="#4a4060" ${S} transform="rotate(20 117 51)"/><circle cx="100" cy="118" r="66" fill="#2b2238" ${S}/><ellipse cx="76" cy="90" rx="16" ry="10" fill="#fff" opacity=".18" transform="rotate(-35 76 90)"/>${eyes}</svg>`;
 }
 
-/* ---------- network (PeerJS, no accounts) ---------- */
-const PEER_PREFIX='yayuhoe-partybox-v1-';
-const PEER_OPTS=(()=>{const ps=new URLSearchParams(location.search).get('ps');if(!ps)return{debug:0};const [host,port]=ps.split(':');return{debug:0,host,port:+port||9000,path:'/',secure:false}})();
+/* ---------- network (public MQTT relay over secure WebSocket, no accounts, works on office Wi-Fi and mobile data) ---------- */
+const BROKERS=[
+  {url:'wss://public.cloud.shiftr.io',opt:{username:'public',password:'public'}},
+  {url:'wss://broker.emqx.io:8084/mqtt',opt:{}},
+  {url:'wss://broker.hivemq.com:8884/mqtt',opt:{}}
+];
+(()=>{const mq=new URLSearchParams(location.search).get('mq');if(mq&&/^wss?:\/\/(127\.0\.0\.1|localhost)[:\/]/.test(mq))BROKERS.unshift({url:mq,opt:{}})})();
+const TOPIC=code=>'yayuhoe-partybox/v1/'+code;
 const CODECH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
-const newCode=()=>Array.from({length:4},()=>CODECH[Math.floor(Math.random()*CODECH.length)]).join('');
-const joinURL=code=>location.origin+location.pathname+'?room='+code;
+const newCode=()=>Array.from({length:5},()=>CODECH[Math.floor(Math.random()*CODECH.length)]).join('');
+let NET_B=0;
+const joinURL=code=>{const q=new URLSearchParams();q.set('room',code);if(NET_B)q.set('b',NET_B);const mq=new URLSearchParams(location.search).get('mq');if(mq)q.set('mq',mq);return location.origin+location.pathname+'?'+q.toString()};
+function getPid(){let pid=store.get('pb_pid',null);if(!pid){pid=rid()+rid();store.set('pb_pid',pid)}return pid}
 function qrImg(text){try{if(typeof QRCode==='undefined')return null;const d=document.createElement('div');new QRCode(d,{text,width:320,height:320,colorDark:'#1d1633',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});const cv=d.querySelector('canvas');return cv?cv.toDataURL():null}catch(e){return null}}
+const MQOPT=extra=>Object.assign({connectTimeout:7000,reconnectPeriod:2500,keepalive:25,clean:true,protocolVersion:4},extra);
 function makeHostNet(code,onStatus){
-  const map=new Map(),cbs=[];let peer=null,tries=0,cur=code;
-  const fire=joined=>{const list=[...map.values()];cbs.forEach(cb=>{try{cb({peers:list,joined:joined||[],left:[],updated:[]})}catch(e){}})};
-  const open=()=>{
-    try{peer&&peer.destroy()}catch(e){}
-    peer=new Peer(PEER_PREFIX+cur,PEER_OPTS);
-    peer.on('open',()=>{tries=0;onStatus('ok',cur)});
-    peer.on('disconnected',()=>{onStatus('re',cur);setTimeout(()=>{try{if(!peer.destroyed)peer.reconnect()}catch(e){}},1500)});
-    peer.on('error',e=>{
-      if(e.type==='unavailable-id'){tries++;if(tries>5){cur=newCode();tries=0}onStatus('busy',cur);setTimeout(open,3000)}
-      else if(['network','server-error','socket-error','socket-closed'].includes(e.type)){onStatus('re',cur);setTimeout(()=>{if(peer.destroyed)open();else if(peer.disconnected){try{peer.reconnect()}catch(x){open()}}},3000)}
-    });
-    peer.on('connection',conn=>{
-      conn.on('open',()=>{const e={peer:conn.peer,presence:{},updatedAt:Date.now(),conn};map.set(conn.peer,e);fire([e])});
-      conn.on('data',m=>{if(!m||typeof m!=='object'||m.t!=='p'||!m.p||typeof m.p!=='object')return;const e=map.get(conn.peer);if(!e)return;
-        const pr=Object.assign({},e.presence);for(const k of ['pid','n','a'])if(k in m.p)pr[k]=m.p[k];e.presence=pr;e.updatedAt=Date.now();fire()});
-      const drop=()=>{const e=map.get(conn.peer);if(e&&e.conn===conn){map.delete(conn.peer);fire()}};
-      conn.on('close',drop);conn.on('error',drop);
-    });
+  const map=new Map(),cbs=[];let cli=null,bi=0,lastEmit=null;const cur=code;
+  const fire=j=>{const list=[...map.values()];cbs.forEach(cb=>{try{cb({peers:list,joined:j||[],left:[],updated:[]})}catch(e){}})};
+  const publish=()=>{if(cli&&cli.connected&&lastEmit){try{cli.publish(TOPIC(cur)+'/st',lastEmit,{retain:true,qos:0})}catch(e){}}};
+  const tryBroker=i=>{
+    bi=((i%BROKERS.length)+BROKERS.length)%BROKERS.length;NET_B=bi;onStatus('wait',cur);
+    const B=BROKERS[bi];let opened=false;
+    const c=mqtt.connect(B.url,MQOPT(Object.assign({clientId:'yh-h-'+rid()},B.opt)));cli=c;
+    const giveUp=setTimeout(()=>{if(!opened&&cli===c){try{c.end(true)}catch(e){}tryBroker(bi+1)}},9000);
+    c.on('connect',()=>{opened=true;clearTimeout(giveUp);store.set('pb_broker',bi);c.subscribe(TOPIC(cur)+'/p/+');onStatus('ok',cur);publish()});
+    c.on('reconnect',()=>{if(opened)onStatus('re',cur)});
+    c.on('offline',()=>{if(opened)onStatus('re',cur)});
+    c.on('message',(t,buf)=>{let m;try{m=JSON.parse(buf.toString())}catch(e){return}
+      if(!m||typeof m!=='object')return;const pid=String(t.split('/').pop()).slice(0,24);
+      if(m.gone){if(map.delete(pid))fire();return}
+      const isNew=!map.has(pid);const e=map.get(pid)||{peer:pid,presence:{},updatedAt:0};
+      e.presence={pid,n:typeof m.n==='string'?m.n.slice(0,12):'??',a:m.a&&typeof m.a==='object'?m.a:null};e.updatedAt=Date.now();map.set(pid,e);fire(isNew?[e]:[])});
   };
-  open();
+  setInterval(()=>{const now=Date.now();let ch=false;for(const [k,e] of map)if(now-e.updatedAt>12000){map.delete(k);ch=true}if(ch)fire()},2000);
+  tryBroker(store.get('pb_broker',0)||0);
   return{code:()=>cur,peers:()=>[...map.values()],presence:async()=>{},onPeers(cb){cbs.push(cb)},
-    emit:async(t,d)=>{for(const e of map.values()){try{if(e.conn.open)e.conn.send({t,d})}catch(x){}}}};
+    emit:async(t,d)=>{if(t!=='st')return;lastEmit=JSON.stringify(d);publish()}};
 }
-function makePlayerNet(code){
-  const hs={},cc=[];let peer=null,conn=null,pres={},ok=false,timer=null;
+function makePlayerNet(code,b){
+  const hs={},cc=[];let cli=null,ok=false,bi=0,got=false;const pres={pid:getPid()};
   const setOk=v=>{if(ok!==v){ok=v;cc.forEach(f=>f(v))}};
-  const retry=(ms=1500)=>{clearTimeout(timer);timer=setTimeout(link,ms)};
-  const ensurePeer=()=>{
-    if(peer&&!peer.destroyed){if(peer.disconnected){try{peer.reconnect()}catch(e){}}return}
-    peer=new Peer(PEER_OPTS);
-    peer.on('open',link);
-    peer.on('error',e=>{if(e.type==='peer-unavailable')NETINFO.nohost=true;setOk(false);if(['network','server-error','socket-error','socket-closed'].includes(e.type)){try{peer.destroy()}catch(x){}peer=null}retry(2500);pRefreshWait()});
-    peer.on('disconnected',()=>setTimeout(()=>{try{if(peer&&!peer.destroyed)peer.reconnect()}catch(x){}},1000));
+  const pub=()=>{if(cli&&cli.connected&&pres.n){try{cli.publish(TOPIC(code)+'/p/'+pres.pid,JSON.stringify({n:pres.n,a:pres.a??null}),{qos:0})}catch(e){}}};
+  const start=i=>{
+    bi=((i%BROKERS.length)+BROKERS.length)%BROKERS.length;const B=BROKERS[bi];got=false;
+    const c=mqtt.connect(B.url,MQOPT(Object.assign({clientId:'yh-p-'+rid(),will:{topic:TOPIC(code)+'/p/'+pres.pid,payload:JSON.stringify({gone:true}),qos:0,retain:false}},B.opt)));cli=c;
+    c.on('connect',()=>{c.subscribe(TOPIC(code)+'/st');pub()});
+    c.on('message',(t,buf)=>{if(cli!==c||!t.endsWith('/st'))return;let d;try{d=JSON.parse(buf.toString())}catch(e){return}if(!d||typeof d!=='object')return;
+      if(!got){got=true;NETINFO.nohost=false}setOk(true);(hs.st||[]).forEach(h=>h({data:d}))});
+    c.on('offline',()=>{if(cli===c)setOk(false)});c.on('close',()=>{if(cli===c)setOk(false)});
+    setTimeout(()=>{if(cli===c&&!got){NETINFO.nohost=true;pRefreshWait();if(b==null){try{c.end(true)}catch(e){}start(bi+1)}}},8000);
   };
-  const link=()=>{
-    if(!peer||peer.destroyed||!peer.open){ensurePeer();if(!peer.open)return}
-    if(conn&&conn.open)return;
-    try{conn&&conn.close()}catch(e){}
-    const c=peer.connect(PEER_PREFIX+code,{reliable:true});conn=c;
-    c.on('open',()=>{if(conn!==c)return;NETINFO.nohost=false;setOk(true);try{c.send({t:'p',p:pres})}catch(e){}});
-    c.on('data',m=>{if(m&&m.t&&hs[m.t])hs[m.t].forEach(h=>h({data:m.d}))});
-    c.on('close',()=>{if(conn===c){setOk(false);retry()}});
-    c.on('error',()=>{if(conn===c){setOk(false);retry()}});
-    setTimeout(()=>{if(conn===c&&!c.open)retry(0)},7000);
-  };
-  ensurePeer();
-  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&!(conn&&conn.open))link()});
-  return{code,presence(patch){Object.assign(pres,patch);if(conn&&conn.open){try{conn.send({t:'p',p:patch})}catch(e){}}return Promise.resolve()},
-    on(t,h){(hs[t]=hs[t]||[]).push(h)},onConnection(f){cc.push(f);setTimeout(()=>f(ok),0)},emit:async()=>{}};
+  setInterval(pub,3000);
+  start(b==null?0:b);
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){if(cli&&!cli.connected){try{cli.reconnect()}catch(e){}}else pub()}});
+  return{code,presence(patch){Object.assign(pres,patch);pres.pid=getPid();pub();return Promise.resolve()},on(t,h){(hs[t]=hs[t]||[]).push(h)},onConnection(f){cc.push(f);setTimeout(()=>f(ok),0)},emit:async()=>{}};
 }
 const NETINFO={nohost:false};
 function pRefreshWait(){if(P&&P.joined&&!P.S&&!PR)pRender()}
 
 /* ---------- boot ---------- */
 let room=null;
-const ROOMCODE=(new URLSearchParams(location.search).get('room')||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
-const netOK=()=>typeof Peer!=='undefined';
-setTimeout(()=>{if(ROOMCODE&&netOK()){room=makePlayerNet(ROOMCODE);startPlayer()}else renderIntro()},0);
+const QS=new URLSearchParams(location.search);
+const ROOMCODE=(QS.get('room')||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
+const ROOMB=QS.has('b')?(+QS.get('b')||0):null;
+const netOK=()=>typeof mqtt!=='undefined';
+setTimeout(()=>{if(ROOMCODE&&netOK()){room=makePlayerNet(ROOMCODE,ROOMB);startPlayer()}else renderIntro()},0);
 
 function tileArt(k,i){return `<div class="art">${chr(Object.assign({c:TC[i%4],id:k+'x'},ART[k]))}</div>`}
 function lineupHTML(){return `<div class="label">게임 목록 · 탭하면 혼자 연습해 볼 수 있어요</div><div class="tiles">${ORDER.map((k,i)=>`<button class="tile" data-pg="${k}">${tileArt(k,i)}<span class="tk">${GAMES[k].k} · 연습하기</span><span class="tn">${GAMES[k].n}</span><span class="td">${esc(GAMES[k].rules[0])}</span></button>`).join('')}</div>`}
@@ -470,13 +470,13 @@ function renderIntro(){
   app.innerHTML=`<div class="wrap">
   <div class="marquee"><div class="hdr"><div><div class="label">8인 야유회용 · 계정 없이 QR로 참가하는 미니게임 9종</div><h1>야유회 파티박스</h1></div>
   <div class="row">${ok?`<button class="btn go big" id="bh">호스트 화면 열기</button>`:`<span class="pill">연결 모듈을 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침하세요.</span>`}</div></div>${castHTML()}</div>
-  ${ok?`<form class="card row" id="jc" style="justify-content:space-between"><label class="label" for="jcode">참가자는 진행자 화면의 QR을 찍거나, 방 코드를 입력하세요</label><div class="row" style="flex:1;min-width:240px;justify-content:flex-end"><input type="text" id="jcode" maxlength="6" placeholder="예: K7QM" autocomplete="off" style="max-width:160px;text-transform:uppercase;font-family:var(--display);font-size:1.4rem;letter-spacing:.2em"><button class="btn go">입장</button></div></form>`:''}
+  ${ok?`<form class="card row" id="jc" style="justify-content:space-between"><label class="label" for="jcode">참가자는 진행자 화면의 QR을 찍거나, 방 코드를 입력하세요</label><div class="row" style="flex:1;min-width:240px;justify-content:flex-end"><input type="text" id="jcode" maxlength="6" placeholder="예: K7QMR" autocomplete="off" style="max-width:160px;text-transform:uppercase;font-family:var(--display);font-size:1.4rem;letter-spacing:.2em"><button class="btn go">입장</button></div></form>`:''}
   <div class="card grid"><div class="label">진행 방법</div>
   <ol class="rules"><li>진행자가 노트북이나 TV에서 이 페이지를 열고 <b>호스트 화면 열기</b>를 누르면 QR 코드가 나옵니다.</li><li>참가자들은 폰 카메라로 QR을 찍어 닉네임만 입력하면 입장합니다. 계정도 설치도 필요 없어요.</li><li>호스트가 팀을 나누고 게임을 골라 시작합니다. 각 게임 순위대로 점수가 쌓여요.</li><li>게임마다 꼴찌 팀은 가벼운 벌칙, 마지막엔 최종 벌칙(뒷정리·아침 준비 등)을 뽑습니다.</li></ol>
-  <p class="muted" style="margin:0">모두 같은 와이파이(또는 진행자 폰 핫스팟)에 연결하면 가장 안정적이에요.</p></div>
+  <p class="muted" style="margin:0">인터넷만 되면 와이파이든 데이터든 상관없이 접속돼요.</p></div>
   ${lineupHTML()}</div>`;
   const bh=$('#bh');if(bh)bh.onclick=()=>{audio();startHost()};
-  const jc=$('#jc');if(jc)jc.onsubmit=e=>{e.preventDefault();const v=$('#jcode').value.toUpperCase().replace(/[^A-Z0-9]/g,'');if(v.length>=4)location.href=joinURL(v)};
+  const jc=$('#jc');if(jc)jc.onsubmit=e=>{e.preventDefault();const v=$('#jcode').value.toUpperCase().replace(/[^A-Z0-9]/g,'');if(v.length>=4)location.href=location.origin+location.pathname+'?room='+v};
   bindPractice(()=>renderIntro());
 }
 
@@ -488,8 +488,8 @@ function newState(){return{e:rid(),v:0,ph:'lobby',g:null,r:null,pl:{},tm:[],done
 function cfgDefault(){return{teams:4,games:ORDER.slice(),mini:DEF_MINI.join('\n'),fin:DEF_FINAL.join('\n'),dbl:true}}
 function startHost(){
   H={cfg:Object.assign(cfgDefault(),store.get('pb_cfg',{})),taps:{},raf:0,confirmReset:false,net:'wait',qr:null,qrFor:null};
-  let code=store.get('pb_code',null);if(!code){code=newCode();store.set('pb_code',code)}
-  room=makeHostNet(code,(st,c)=>{H.net=st;if(c!==store.get('pb_code',null))store.set('pb_code',c);schedRender()});
+  let code=store.get('pb_code2',null);if(!code){code=newCode();store.set('pb_code2',code)}
+  room=makeHostNet(code,st=>{H.net=st;H.qrFor=null;schedRender()});
   S=store.get('pb_S',null);
   if(!S||!S.e){S=newState()}else{S.e=rid()}
   room.presence({role:'host'}).catch(()=>{});
@@ -612,8 +612,8 @@ function scoreHTML(big){
   return `<div class="score">${order.map(([t,x])=>`<div class="team ${tc(t)}"><div class="nm">${esc(x.n)}팀</div><div class="pt num">${x.s}<span class="muted" style="font-size:1rem"> 점</span></div>${big?`${headsHTML(t)}<div class="mem">${members(t).map(p=>esc(S.pl[p].n)).join(' · ')||'—'}</div>`:''}</div>`).join('')}</div>`;
 }
 function hostCode(){return room&&room.code?room.code():''}
-function qrFor(){const c=hostCode();if(H.qrFor!==c){H.qrFor=c;H.qr=qrImg(joinURL(c))}return H.qr}
-function netPill(){return H.net==='ok'?'':`<span class="pill" style="border-color:var(--hot)">${H.net==='busy'?'방 코드 준비 중…':H.net==='re'?'연결 서버 재접속 중…':'연결 준비 중…'}</span>`}
+function qrFor(){const c=hostCode()+':'+NET_B;if(H.qrFor!==c){H.qrFor=c;H.qr=qrImg(joinURL(hostCode()))}return H.qr}
+function netPill(){return H.net==='ok'?'':`<span class="pill" style="border-color:var(--hot)">${H.net==='re'?'중계 서버 재접속 중…':'중계 서버 연결 중…'}</span>`}
 function hostHeader(){
   const on=online(),n=Object.keys(on).length;
   return `<div class="marquee hdr"><div><div class="label">${S.ph==='lobby'?'대기실':S.g?GAMES[S.g].k+(S.dbl?' · 점수 2배':''):'점수판'}</div><h1>${S.g&&['intro','play','res'].includes(S.ph)?esc(GAMES[S.g].n):'야유회 파티박스'}</h1></div><div class="row">${netPill()}<span class="pill">방 코드 <b class="disp" style="letter-spacing:.15em;color:var(--bulb)">${esc(hostCode())}</b></span><span class="pill"><span class="dot" style="background:var(--ok)"></span>${n}명 접속</span>${S.done.length?`<span class="pill">${S.done.length}/${H.cfg.games.length} 게임 완료</span>`:''}</div></div>`;
@@ -813,7 +813,7 @@ function bindHost(){
    ========================================================= */
 let P=null;
 function startPlayer(){
-  let pid=store.get('pb_pid',null);if(!pid){pid=rid()+rid();store.set('pb_pid',pid)}
+  const pid=getPid();
   P={pid,n:store.get('pb_nick',''),S:null,ep:null,v:-1,joined:false,game:null,key:null};
   room.on('st',m=>{const s=m.data;if(!s||typeof s!=='object'||!s.e)return;if(s.e===P.ep&&s.v<=P.v)return;P.ep=s.e;P.v=s.v;P.S=s;pRender()});
   room.onConnection(c=>{P.conn=c;const el=$('#conn');if(el)el.hidden=c});
@@ -905,7 +905,7 @@ const PG={
       iv=setInterval(()=>{const left=Math.max(0,end-performance.now());ts.textContent=(left/1000).toFixed(1)+'초 남음';if(left<=0){clearInterval(iv);finish()}},100)});
     sc.addEventListener('pointerdown',e=>{e.preventDefault();if(st!=='go')return;n++;tt.textContent=n+'회';gf.style.height=Math.min(100,n/55*100)+'%';
       if(n===30)draw({face:'shock'});me.className='actor shake';clearTimeout(calm);calm=setTimeout(()=>{if(st==='go')me.className='actor'},180);
-      const now=performance.now();if(now-last>150){last=now;send({r,c:n,done:false})}if(n%5===0)beep(300+n*4,.03,'triangle',.1)});
+      const now=performance.now();if(now-last>400){last=now;send({r,c:n,done:false})}if(n%5===0)beep(300+n*4,.03,'triangle',.1)});
     return{stop(){stopCd();clearInterval(iv);clearTimeout(calm)}}
   },
 
