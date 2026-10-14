@@ -47,6 +47,32 @@ img{max-width:100%}
 .vsli>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .vsli.cur{outline:2px solid var(--bulb)}.vsli.next{opacity:.6}
 .spec .vsside .lcard .ch{max-width:260px}.spec .vsli{font-size:1.1rem}
+.pub{background:linear-gradient(#ff9a3d 0,#ffb86b 55%,#7a4b2a 55%,#5c3a20 100%)}
+.pub .lights{position:absolute;left:0;right:0;top:4%;height:10%;background:radial-gradient(circle,#fff6b0 0 5px,transparent 6px) 0 50%/36px 100% repeat-x;opacity:.9}
+.pub .ptable{position:absolute;left:6%;right:6%;bottom:0;height:24%;background:#8a5a2b;border:3px solid var(--ink);border-bottom:0;border-radius:12px 12px 0 0;z-index:1}
+.pub .actor{z-index:0}
+.glass{position:absolute;bottom:28%;width:11%;z-index:2;transform-origin:50% 100%}
+.glass svg{width:100%;height:auto;display:block}
+.glass.up{animation:clink .32s ease-out}
+#gb.up{animation-name:clinkL}
+@keyframes clink{40%{transform:translate(-30%,-45%) rotate(-24deg)}100%{transform:none}}
+@keyframes clinkL{40%{transform:translate(30%,-45%) rotate(24deg)}100%{transform:none}}
+.clinkfx{position:absolute;left:50%;top:30%;transform:translateX(-50%);font-family:var(--display);font-size:clamp(1.6rem,8vw,2.6rem);color:var(--bulb);-webkit-text-stroke:6px var(--ink);paint-order:stroke;z-index:3;opacity:0}
+.clinkfx.pop{animation:cfpop .5s ease-out}
+@keyframes cfpop{0%{opacity:1;transform:translateX(-50%) scale(.5)}60%{opacity:1;transform:translateX(-50%) scale(1.2)}100%{opacity:0;transform:translateX(-50%) scale(1)}}
+.dots{position:absolute;left:50%;bottom:3%;transform:translateX(-50%);display:flex;gap:6px;z-index:3}
+.dots i{width:14px;height:14px;border-radius:50%;background:#0003;border:2px solid #0004}
+.dots i.half{width:9px;height:9px;align-self:center}
+.dots i.on{border-color:#fff;background:transparent}
+.dots i.lit{background:#fff}.dots i.hit{background:var(--ok);border-color:var(--ok)}.dots i.miss{background:var(--hot);border-color:var(--hot)}
+.vslanes{display:grid;gap:8px;width:100%;max-width:640px;margin:0 auto}.vslane{display:grid;grid-template-columns:5.5em 1fr;gap:8px;align-items:center}.vslane>span{font-weight:700;color:var(--tc);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.vslane canvas.rmini{margin:0}
+canvas.rmini{width:100%;height:auto;border-radius:10px;border:2px solid var(--line);margin-top:4px}
+.kgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.kopt{background:var(--panel);border:2px solid var(--line);border-radius:12px;padding:4px 2px;display:flex;flex-direction:column;align-items:center;font-size:.72rem;font-weight:700;min-width:0}
+.kopt .kart{width:100%;max-width:56px}.kopt .kart svg{width:100%;height:auto}
+.kopt.on{border-color:var(--bulb);background:color-mix(in srgb,var(--bulb) 16%,var(--panel))}
+.lcard.me{box-shadow:0 0 0 3px var(--bulb)}
+.metag{position:absolute;top:6px;left:6px;z-index:2;background:var(--bulb);color:#241a00;font-weight:800;font-size:.8rem;border-radius:8px;padding:1px 7px}
 .pill.live{background:var(--hot);color:#fff;border-color:var(--hot);font-weight:700;animation:bulbs 1s steps(2) infinite}
 .lstage{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:12px}
 .lcard{position:relative;background:var(--panel);border-radius:16px;padding:10px 8px 10px;display:flex;flex-direction:column;align-items:center;gap:2px;border-top:5px solid var(--tc);min-width:0;overflow:hidden}
@@ -259,14 +285,14 @@ const GAMES={
     rules:['카운트다운 후 10초 동안 화면을 최대한 빠르게 연타해 병을 흔드세요.','압력 게이지가 꽉 차면 코르크가 뻥! 터집니다.','팀원 평균 연타 수로 순위를 냅니다. 폰은 떨어뜨리지 마세요!']},
   stop:{n:'10초 기다려!',k:'감각',dir:'low',
     rules:['강아지에게 "기다려!"를 시켰습니다. 시계는 처음 3초만 보여요.','속으로 세다가 정확히 10초라고 느낄 때 탭해서 간식을 주세요.','너무 빠르면 강아지가 어리둥절, 너무 늦으면 잠들어 버립니다.']},
-  rhythm:{n:'못 박기 리듬',k:'리듬',dir:'high',
-    rules:['소리를 켜 주세요. 음악이 깔리고 4박 카운트 뒤에 시작합니다.','"띵!" 소리와 함께 못이 떨어지면, 바로 다음 박자에 화면을 탭해 망치로 쾅!','"띵띵"은 반 박자 간격으로 두 번 박아야 해요. 박자가 어긋나면 못이 휘어집니다.']},
+  rhythm:{n:'리듬 챌린지',k:'리듬',dir:'high',
+    rules:['소리를 켜 주세요. 3가지 종목 중 하나가 나와요: 못 박기, 부장님 건배 따라하기, 탁구 랠리.','못 박기는 "띵" 소리 다음 박자에 쾅! 건배는 부장님이 짠 한 리듬을 그대로 따라 짠! 탁구는 공이 "딱" 튀면 바로 받아치기!','박자가 정확할수록 점수가 높아요. 정확도로 겨룹니다.']},
   nunchi:{n:'디지털 눈치게임',k:'눈치',dir:'high',
     rules:['시작하면 아무 때나 화면을 탭해 벌떡 일어나며 숫자를 외칩니다.','0.7초 안에 겹쳐서 일어난 사람들은 머리를 쾅! 모두 탈락.','끝까지 못 일어난 마지막 1명도 탈락입니다.']},
   balance:{n:'밸런스 게임',k:'다수결',dir:'high',
     rules:['질문 3개가 나옵니다. A나 B를 고르면 내 캐릭터가 그쪽으로 걸어가요.','다수파를 고른 사람이 1점씩 얻습니다.','소수파는 스포트라이트 아래에서 한마디 해명하기!']},
   quiz:{n:'추억 퀴즈',k:'상식',dir:'high',
-    rules:['문제 5개, 각 15초입니다.','정답이면 500점에 빨리 맞힐수록 최대 500점 보너스.','틀리면 머리 위로 물벼락! 팀원 평균 점수로 순위를 냅니다.']},
+    rules:['문제 5개, 각 5초! 머뭇거리면 시간 초과예요.','정답이면 500점에 빨리 맞힐수록 최대 500점 보너스.','틀리면 머리 위로 물벼락! 팀원 평균 점수로 순위를 냅니다.']},
   liar:{n:'라이어 게임',k:'추리',dir:'high',
     rules:['한 명만 제시어를 모르는 라이어입니다. 폰에서 내 카드를 확인하세요.','돌아가며 제시어를 한 문장으로 설명합니다. 라이어는 변장한 채 눈치껏!','토론 후 폰으로 라이어를 투표합니다.','라이어가 잡혀도 제시어를 맞히면 라이어 승리!']},
   bomb:{n:'폭탄 돌리기',k:'순발력',dir:'high',
@@ -313,6 +339,7 @@ const BOMB=['과일 이름','라면 이름','우리나라 도시 이름','나라
 const RHY=[[1,3,5,7,9,9.5,11,11.5,13,14,15,16,17,17.5,19],[1,2,3,5,5.5,7,9,10,11,11.5,13,13.5,14,15,17,18,19]];
 const DEF_MINI=['소주 한 잔 원샷','팀원끼리 러브샷','건배사 하고 다 같이 한 잔','맥주 한 잔 비우기','옆 팀이 말아주는 한 잔','다음 잔 따르기 담당','팀 단체 애교 한 번'];
 const DEF_FINAL=['오늘 밤 뒷정리 전담','내일 아침 식사 준비','설거지 담당','쓰레기 분리수거 담당','내일 아침 해장 음료 셔틀','퇴실 청소 담당'];
+const QT=5000; // quiz time per question (ms)
 const PTS={1:[10],2:[10,0],3:[10,5,0],4:[10,6,3,0]};
 
 /* ---------- utils ---------- */
@@ -344,14 +371,26 @@ const fmt=(g,v)=>v==null?'—':g==='stop'?v.toFixed(2)+'초 차이':g==='duel'?M
 const INK='#1d1633';
 function hsh(s){let h=7;for(const ch of String(s))h=(h*31+ch.charCodeAt(0))>>>0;return h}
 function star(x,y,r,fill){let p='';for(let i=0;i<10;i++){const a=Math.PI/5*i-Math.PI/2,rr=i%2?r*.45:r;p+=(i?'L':'M')+(x+rr*Math.cos(a)).toFixed(1)+' '+(y+rr*Math.sin(a)).toFixed(1)}return`<path d="${p}Z" fill="${fill}" stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"/>`}
+// Character kinds a player can pick. KINDS maps player id -> kind (filled from shared state / presence).
+const KLIST=[['bean','콩돌이'],['cat','고양이'],['bunny','토끼'],['bear','곰'],['duck','오리'],['pig','돼지'],['penguin','펭귄'],['dino','공룡'],['robot','로봇'],['alien','외계인']];
+const KSET=new Set(KLIST.map(x=>x[0]));const KINDS={};
+function noteKinds(pl){if(!pl)return;for(const pid in pl){const k=pl[pid]&&pl[pid].k;if(KSET.has(k))KINDS[pid]=k}}
 function chr(o={}){
-  const c=o.c||'#ffd64d',h=hsh(o.id||'x'),f=o.face||'normal',arms=o.arms||'down';
+  const c=o.c||'#ffd64d',h=hsh(o.id||'x'),f=o.face||'normal',arms=o.arms||'down',kd=KSET.has(o.k)?o.k:(KINDS[o.id]||'bean');
   const hair=o.hair||['tuft','spike','curl','shine'][h%4];
   const glasses=o.glasses!==undefined?o.glasses:((h>>4)%5===0);
   const S=`stroke="${INK}" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"`;
   let s='';
   if(o.hat==='afro')s+=`<g fill="#2b2238" ${S}>${[[60,40,32],[30,52,18],[90,52,18],[40,22,18],[80,22,18],[60,12,16]].map(([x,y,r])=>`<circle cx="${x}" cy="${y}" r="${r}"/>`).join('')}</g>`;
   s+=`<ellipse cx="60" cy="146" rx="40" ry="5" fill="#0003"/>`;
+  // kind features drawn behind the body (ears, antennae, spikes)
+  if(kd==='cat')s+=`<path d="M28 64 L26 22 L54 42Z" fill="${c}" ${S}/><path d="M92 64 L94 22 L66 42Z" fill="${c}" ${S}/><path d="M32 52 L31 32 L46 43Z" fill="#ff8fa3"/><path d="M88 52 L89 32 L74 43Z" fill="#ff8fa3"/>`;
+  if(kd==='bunny')s+=`<g ${S}><ellipse cx="42" cy="14" rx="10" ry="30" fill="${c}" transform="rotate(-12 42 14)"/><ellipse cx="78" cy="14" rx="10" ry="30" fill="${c}" transform="rotate(12 78 14)"/></g><ellipse cx="42" cy="16" rx="4.5" ry="20" fill="#ff8fa3" transform="rotate(-12 42 16)"/><ellipse cx="78" cy="16" rx="4.5" ry="20" fill="#ff8fa3" transform="rotate(12 78 16)"/>`;
+  if(kd==='bear')s+=`<g ${S} fill="${c}"><circle cx="31" cy="46" r="13"/><circle cx="89" cy="46" r="13"/></g><circle cx="31" cy="46" r="6" fill="#0002"/><circle cx="89" cy="46" r="6" fill="#0002"/>`;
+  if(kd==='pig')s+=`<g ${S} fill="${c}"><path d="M30 54 L28 34 L48 42Z"/><path d="M90 54 L92 34 L72 42Z"/></g>`;
+  if(kd==='dino')s+=`<path d="M38 46 L44 22 L52 40 L60 16 L68 40 L76 22 L82 46Z" fill="#ffd64d" ${S}/>`;
+  if(kd==='robot')s+=`<path d="M60 40 V12" stroke="${INK}" stroke-width="5"/><circle cx="60" cy="10" r="7" fill="#ff5e78" ${S}/><rect x="13" y="78" width="10" height="18" rx="3" fill="#9aa0b5" ${S}/><rect x="97" y="78" width="10" height="18" rx="3" fill="#9aa0b5" ${S}/>`;
+  if(kd==='alien')s+=`<path d="M48 42 L36 14 M72 42 L84 14" stroke="${INK}" stroke-width="4"/><circle cx="36" cy="12" r="6" fill="#46d68c" ${S}/><circle cx="84" cy="12" r="6" fill="#46d68c" ${S}/>`;
   s+=`<ellipse cx="44" cy="138" rx="13" ry="7" fill="${INK}"/><ellipse cx="76" cy="138" rx="13" ry="7" fill="${INK}"/>`;
   s+=`<path d="M60 38 C93 38 101 70 99 98 C97 125 83 135 60 135 C37 135 23 125 21 98 C19 70 27 38 60 38Z" fill="${c}" ${S}/>`;
   s+=`<ellipse cx="60" cy="110" rx="22" ry="17" fill="#fff" opacity=".22"/>`;
@@ -366,15 +405,24 @@ function chr(o={}){
   if(f==='sweat')face=eyeN(46,0,-1,3.2)+eyeN(74,0,-1,3.2)+`<path d="M49 95 q5 -4 11 0 t11 0" fill="none" ${S}/><path d="M100 50 q7 10 0 13 q-7 -3 0 -13Z" fill="#8fd3ff" stroke="${INK}" stroke-width="2.5"/>`;
   if(f==='cry')face=`<path d="M38 70 q8 7 16 0 M66 70 q8 7 16 0" fill="none" ${S}/><path d="M42 76 v26 M78 76 v26" stroke="#8fd3ff" stroke-width="6" stroke-linecap="round" class="drip"/><ellipse cx="60" cy="98" rx="9" ry="7" fill="${INK}"/>`;
   if(f==='smug')face=`<ellipse cx="46" cy="72" rx="8.5" ry="10" fill="#fff" ${S}/><circle cx="48" cy="74" r="4.3" fill="${INK}"/><path d="M37 68 h18" ${S}/>`+eyeN(74)+`<path d="M50 93 q10 5 20 -5" fill="none" ${S}/><path d="M66 58 q8 -6 16 -2" fill="none" ${S}/>`;
+  if(kd==='bear')s+=`<ellipse cx="60" cy="94" rx="16" ry="11" fill="#fff" opacity=".55"/><ellipse cx="60" cy="87" rx="6" ry="4" fill="${INK}"/>`;
+  if(kd==='penguin')s+=`<path d="M60 52 C80 50 88 70 86 92 C84 112 72 120 60 120 C48 120 36 112 34 92 C32 70 40 50 60 52Z" fill="#fff" opacity=".92"/>`;
+  if(kd==='robot')s+=`<rect x="32" y="56" width="56" height="34" rx="8" fill="#ffffff33" ${S}/>`;
   s+=face;
   if(f!=='ko'&&f!=='cry')s+=`<ellipse cx="34" cy="88" rx="7" ry="4" fill="#ff8fa3" opacity=".55"/><ellipse cx="86" cy="88" rx="7" ry="4" fill="#ff8fa3" opacity=".55"/>`;
-  if(glasses&&['normal','focus','sweat','smug'].includes(f)&&o.hat!=='disguise')s+=`<g fill="none" ${S}><circle cx="46" cy="72" r="13"/><circle cx="74" cy="72" r="13"/><path d="M59 72 h2"/></g>`;
+  if(kd==='duck')s+=`<path d="M44 90 q16 -12 32 0 q-16 12 -32 0Z" fill="#ffa53d" ${S}/><path d="M46 90 h28" stroke="${INK}" stroke-width="2"/>`;
+  if(kd==='penguin')s+=`<path d="M53 88 L67 88 L60 98Z" fill="#ffa53d" ${S}/>`;
+  if(kd==='pig')s+=`<ellipse cx="60" cy="90" rx="12" ry="8" fill="#ffb3c6" ${S}/><ellipse cx="56" cy="90" rx="2.2" ry="3" fill="${INK}"/><ellipse cx="64" cy="90" rx="2.2" ry="3" fill="${INK}"/>`;
+  if(kd==='cat')s+=`<path d="M30 90 L12 86 M30 96 L13 99 M90 90 L108 86 M90 96 L107 99" stroke="${INK}" stroke-width="2.5" stroke-linecap="round"/>`;
+  if(kd==='alien')s+=`<circle cx="60" cy="54" r="6" fill="#fff" ${S}/><circle cx="60" cy="55" r="2.6" fill="${INK}"/>`;
+  if(kd==='dino')s+=`<circle cx="52" cy="86" r="1.8" fill="${INK}"/><circle cx="68" cy="86" r="1.8" fill="${INK}"/>`;
+  if(kd==='bean'&&glasses&&['normal','focus','sweat','smug'].includes(f)&&o.hat!=='disguise')s+=`<g fill="none" ${S}><circle cx="46" cy="72" r="13"/><circle cx="74" cy="72" r="13"/><path d="M59 72 h2"/></g>`;
   const hat=o.hat;
-  if(!hat||hat==='disguise'){
-    if(hair==='tuft')s+=`<path d="M55 40 q-4 -16 8 -18 q-6 9 2 18" fill="${c}" ${S}/>`;
-    if(hair==='spike')s+=`<path d="M44 44 l4 -14 l7 10 l5 -14 l5 14 l7 -10 l4 14" fill="${c}" ${S}/>`;
-    if(hair==='curl')s+=`<path d="M60 39 q-12 -12 2 -19 q12 2 4 11 q-4 4 -7 0" fill="none" ${S}/>`;
-    if(hair==='shine')s+=`<ellipse cx="44" cy="52" rx="7" ry="3.5" fill="#fff" opacity=".6" transform="rotate(-30 44 52)"/>`;
+  if((!hat||hat==='disguise')&&(kd==='bean'||kd==='duck')){
+    if(kd==='duck')s+=`<path d="M58 40 q-6 -14 4 -16 q-2 8 4 16" fill="${c}" ${S}/>`;else if(hair==='tuft')s+=`<path d="M55 40 q-4 -16 8 -18 q-6 9 2 18" fill="${c}" ${S}/>`;
+    else if(hair==='spike')s+=`<path d="M44 44 l4 -14 l7 10 l5 -14 l5 14 l7 -10 l4 14" fill="${c}" ${S}/>`;
+    else if(hair==='curl')s+=`<path d="M60 39 q-12 -12 2 -19 q12 2 4 11 q-4 4 -7 0" fill="none" ${S}/>`;
+    else if(hair==='shine')s+=`<ellipse cx="44" cy="52" rx="7" ry="3.5" fill="#fff" opacity=".6" transform="rotate(-30 44 52)"/>`;
   }
   let H='';
   if(hat==='cowboy'||hat==='cowboyb'){const a=hat==='cowboy'?'#9a6233':'#2b2238',b=hat==='cowboy'?'#b57440':'#3d3150';H=`<path d="M34 40 q2 -30 26 -30 q24 0 26 30Z" fill="${b}" ${S}/><path d="M36 33 h48" stroke="${hat==='cowboy'?'#5c3a20':'#ff5e78'}" stroke-width="6"/><path d="M12 42 q48 -16 96 0 q-12 10 -48 10 q-36 0 -48 -10Z" fill="${a}" ${S}/>`}
@@ -457,7 +505,7 @@ function makeHostNet(code,onStatus){
       if(!m||typeof m!=='object')return;const pid=String(t.split('/').pop()).slice(0,24);
       if(m.gone){if(map.delete(pid))fire();return}
       const isNew=!map.has(pid);const e=map.get(pid)||{peer:pid,presence:{},updatedAt:0};
-      e.presence={pid,n:typeof m.n==='string'?m.n.slice(0,12):'??',a:m.a&&typeof m.a==='object'?m.a:null};e.updatedAt=Date.now();map.set(pid,e);fire(isNew?[e]:[])});
+      e.presence={pid,n:typeof m.n==='string'?m.n.slice(0,12):'??',k:KSET.has(m.k)?m.k:'bean',a:m.a&&typeof m.a==='object'?m.a:null};e.updatedAt=Date.now();map.set(pid,e);fire(isNew?[e]:[])});
   };
   setInterval(()=>{const now=Date.now();let ch=false;for(const [k,e] of map)if(!e.local&&now-e.updatedAt>12000){map.delete(k);ch=true}if(ch)fire()},2000);
   const lh={};
@@ -472,7 +520,7 @@ function makeHostNet(code,onStatus){
 function makePlayerNet(code,b){
   const hs={},cc=[];let cli=null,ok=false,bi=0,got=false;const pres={pid:getPid()};
   const setOk=v=>{if(ok!==v){ok=v;cc.forEach(f=>f(v))}};
-  const pub=()=>{if(cli&&cli.connected&&pres.n){try{cli.publish(TOPIC(code)+'/p/'+pres.pid,JSON.stringify({n:pres.n,a:pres.a??null}),{qos:0})}catch(e){}}};
+  const pub=()=>{if(cli&&cli.connected&&pres.n){try{cli.publish(TOPIC(code)+'/p/'+pres.pid,JSON.stringify({n:pres.n,k:pres.k,a:pres.a??null}),{qos:0})}catch(e){}}};
   const start=i=>{
     bi=((i%BROKERS.length)+BROKERS.length)%BROKERS.length;const B=BROKERS[bi];got=false;
     const c=mqtt.connect(B.url,MQOPT(Object.assign({clientId:'yh-p-'+rid(),will:{topic:TOPIC(code)+'/p/'+pres.pid,payload:JSON.stringify({gone:true}),qos:0,retain:false}},B.opt)));cli=c;
@@ -505,8 +553,8 @@ function startSpectator(code,b){
   SPEC=true;app.classList.add('spec');
   H={cfg:{teams:4,games:ORDER.slice(),mini:'',fin:'',dbl:false},taps:{},raf:0,net:'wait',qr:null,qrFor:null,confirmReset:false};
   room=makeSpecNet(code,b);
-  room.on('st',d=>{const prev=S;S=d;watchSpin(d);H.cfg.games=Array.isArray(d.gl)?d.gl:ORDER.slice();specFx(prev,d);schedRender()});
-  room.on('lv',d=>{if(!d||!d.on||typeof d.on!=='object')return;const now=Date.now();room.setPeers(Object.entries(d.on).map(([pid,v])=>({presence:{pid,n:Array.isArray(v)?String(v[0]).slice(0,12):'??',a:Array.isArray(v)&&v[1]&&typeof v[1]==='object'?v[1]:null},updatedAt:now})));schedRender()});
+  room.on('st',d=>{const prev=S;S=d;noteKinds(d.pl);watchSpin(d);H.cfg.games=Array.isArray(d.gl)?d.gl:ORDER.slice();specFx(prev,d);schedRender()});
+  room.on('lv',d=>{if(!d||!d.on||typeof d.on!=='object')return;const now=Date.now();room.setPeers(Object.entries(d.on).map(([pid,v])=>({presence:{pid,n:Array.isArray(v)?String(v[0]).slice(0,12):'??',k:Array.isArray(v)?v[2]:null,a:Array.isArray(v)&&v[1]&&typeof v[1]==='object'?v[1]:null},updatedAt:now})));schedRender()});
   setInterval(()=>{document.querySelectorAll('[data-cd]').forEach(el=>{const end=+el.dataset.cd;const x=Math.max(0,Math.ceil((end-Date.now())/1000));el.textContent=x>=60?Math.floor(x/60)+':'+String(x%60).padStart(2,'0'):x+'초'})},250);
   keepAwake();specWait();
 }
@@ -527,6 +575,10 @@ const ROOMB=QS.has('b')?(+QS.get('b')||0):null;
 const netOK=()=>typeof mqtt!=='undefined';
 setTimeout(()=>{if(ROOMCODE&&netOK()&&QS.has('watch'))startSpectator(ROOMCODE,ROOMB);else if(ROOMCODE&&netOK()){room=makePlayerNet(ROOMCODE,ROOMB);startPlayer()}else renderIntro()},0);
 
+function kindPicker(sel,c){return `<div class="kgrid" role="radiogroup" aria-label="캐릭터">${KLIST.map(([k,n])=>`<button type="button" class="kopt ${k===sel?'on':''}" data-kind="${k}" role="radio" aria-checked="${k===sel}"><span class="kart">${chr({c,id:'kp-'+k,k,face:'happy',glasses:false})}</span>${n}</button>`).join('')}</div>`}
+function bindKindPicker(root,cb){root.querySelectorAll('[data-kind]').forEach(b=>b.onclick=()=>{root.querySelectorAll('[data-kind]').forEach(x=>{x.classList.toggle('on',x===b);x.setAttribute('aria-checked',x===b)});beep(700,.05);cb(b.dataset.kind)})}
+const isMe=pid=>typeof P!=='undefined'&&P&&P.pid===pid;
+const meTag=pid=>isMe(pid)?'<span class="metag">나</span>':'';
 function tileArt(k,i){return `<div class="art">${chr(Object.assign({c:TC[i%4],id:k+'x'},ART[k]))}</div>`}
 function lineupHTML(){return `<div class="label">게임 목록 · 탭하면 혼자 연습해 볼 수 있어요</div><div class="tiles">${ORDER.map((k,i)=>`<button class="tile" data-pg="${k}">${tileArt(k,i)}<span class="tk">${GAMES[k].k} · 연습하기</span><span class="tn">${GAMES[k].n}</span><span class="td">${esc(GAMES[k].rules[0])}</span></button>`).join('')}</div>`}
 function bindPractice(back){app.querySelectorAll('[data-pg]').forEach(b=>b.onclick=()=>practice(b.dataset.pg,back))}
@@ -536,7 +588,7 @@ function renderIntro(){
   app.innerHTML=`<div class="wrap">
   <div class="marquee"><div class="hdr"><div><div class="label">8인 야유회용 · 계정 없이 QR로 참가하는 미니게임 9종</div><h1>야유회 파티박스</h1></div>
   <div class="row">${ok?`<button class="btn go big" id="bmk">방 만들기</button><button class="btn big" id="bh">TV·노트북 진행 화면</button>`:`<span class="pill">연결 모듈을 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침하세요.</span>`}</div></div>${castHTML()}</div>
-  ${ok?`<form class="card row" id="mkf" hidden style="justify-content:space-between"><label class="label" for="mknick">방장 닉네임 · 방장도 같이 플레이해요</label><div class="row" style="flex:1;min-width:240px;justify-content:flex-end"><input type="text" id="mknick" maxlength="12" placeholder="예: 강선임" autocomplete="off" style="max-width:200px"><button class="btn go">만들기</button></div></form>`:''}
+  ${ok?`<form class="card row" id="mkf" hidden style="justify-content:space-between"><label class="label" for="mknick">방장 닉네임 · 방장도 같이 플레이해요</label><div class="row" style="flex:1;min-width:240px;justify-content:flex-end"><input type="text" id="mknick" maxlength="12" placeholder="예: 강선임" autocomplete="off" style="max-width:200px"><button class="btn go">만들기</button></div><div style="flex-basis:100%">${kindPicker(store.get('pb_kind','bean'),TC[0])}</div></form>`:''}
   ${ok?`<form class="card row" id="jc" style="justify-content:space-between"><label class="label" for="jcode">참가자는 방장 폰의 QR을 찍거나, 방 코드를 입력하세요</label><div class="row" style="flex:1;min-width:240px;justify-content:flex-end"><input type="text" id="jcode" maxlength="6" placeholder="예: K7QMR" autocomplete="off" style="max-width:160px;text-transform:uppercase;font-family:var(--display);font-size:1.4rem;letter-spacing:.2em"><button class="btn go">입장</button><button type="button" class="btn" id="jw">관전</button></div></form>`:''}
   <div class="card grid"><div class="label">진행 방법</div>
   <ol class="rules"><li>한 명이 폰에서 <b>방 만들기</b>를 누르면 방장이 됩니다. 방장도 다른 사람과 똑같이 게임에 참여해요.</li><li>나머지는 방장 폰에 뜬 QR을 폰 카메라로 찍고 닉네임만 입력하면 입장합니다. 계정도 설치도 필요 없어요.</li><li>방장은 아래쪽 <b>방장 진행</b> 탭에서 팀을 나누고 게임을 고릅니다. 각 게임 순위대로 점수가 쌓여요.</li><li>TV나 노트북이 있다면 방 코드를 넣고 <b>관전</b>을 눌러 게임 현황을 크게 중계할 수 있어요. 진행까지 TV에서 하려면 <b>TV·노트북 진행 화면</b>을 쓰세요.</li><li>게임마다 꼴찌 팀은 가벼운 벌칙, 마지막엔 최종 벌칙(뒷정리·아침 준비 등)을 뽑습니다.</li></ol>
@@ -544,6 +596,7 @@ function renderIntro(){
   ${lineupHTML()}</div>`;
   const bh=$('#bh');if(bh)bh.onclick=()=>{audio();startHost()};
   const bmk=$('#bmk'),mkf=$('#mkf');if(bmk)bmk.onclick=()=>{audio();mkf.hidden=false;const i=$('#mknick');i.value=store.get('pb_nick','');i.focus()};
+  if(mkf){bindKindPicker(mkf,k=>store.set('pb_kind',k))}
   if(mkf)mkf.onsubmit=e=>{e.preventDefault();const n=$('#mknick').value.trim();if(n)startHybrid(n)};
   const jc=$('#jc');if(jc)jc.onsubmit=e=>{e.preventDefault();const v=$('#jcode').value.toUpperCase().replace(/[^A-Z0-9]/g,'');if(v.length>=4)location.href=location.origin+location.pathname+'?room='+v};
   const jw=$('#jw');if(jw)jw.onclick=()=>{const v=$('#jcode').value.toUpperCase().replace(/[^A-Z0-9]/g,'');if(v.length>=4)location.href=location.origin+location.pathname+'?room='+v+'&watch=1';else $('#jcode').focus()};
@@ -586,10 +639,10 @@ function needsAction(){if(!S)return false;if(S.ph!=='play')return S.ph!=='lobby'
   if(['duel','stop','rhythm','mash'].includes(g)){const [k,n]=doneCount();return n>0&&k===n}
   if(g==='nunchi')return !!d.end;if(g==='quiz')return !!d.rev;return true}
 function updateTabs(){if(!HYBRID)return;const bar=$('#tabbar');if(!bar)return;bar.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('on',b.dataset.tab===TAB));const bd=$('#tbadge');if(bd)bd.hidden=!(TAB==='play'&&needsAction())}
-function setS(p){if(SPEC)return;Object.assign(S,p);S.gl=H.cfg.games;S.v++;store.set('pb_S',S);broadcast();hostRender()}
+function setS(p){if(SPEC)return;Object.assign(S,p);noteKinds(S.pl);S.gl=H.cfg.games;S.v++;store.set('pb_S',S);broadcast();hostRender()}
 function broadcast(){if(room&&S)room.emit('st',S).catch(()=>{})}
 function saveCfg(){store.set('pb_cfg',H.cfg)}
-function online(){const m={};for(const p of room.peers()){const pr=p.presence||{};if(pr.role==='host'||typeof pr.pid!=='string')continue;const pid=pr.pid.slice(0,24);if(!m[pid]||p.updatedAt>m[pid].u)m[pid]={n:String(pr.n||'??').slice(0,12),a:pr.a&&typeof pr.a==='object'?pr.a:null,u:p.updatedAt}}return m}
+function online(){const m={};for(const p of room.peers()){const pr=p.presence||{};if(pr.role==='host'||typeof pr.pid!=='string')continue;const pid=pr.pid.slice(0,24);if(!m[pid]||p.updatedAt>m[pid].u){m[pid]={n:String(pr.n||'??').slice(0,12),k:KSET.has(pr.k)?pr.k:'bean',a:pr.a&&typeof pr.a==='object'?pr.a:null,u:p.updatedAt};KINDS[pid]=m[pid].k}}return m}
 function members(t){return Object.keys(S.pl).filter(pid=>S.pl[pid].t===t)}
 function activePids(){const on=online();return Object.keys(S.pl).filter(pid=>S.pl[pid].t>=0&&on[pid])}
 function inp(pid,on){const a=(on||online())[pid];return a&&a.a&&a.a.r===S.r?a.a:null}
@@ -597,23 +650,23 @@ function tc(t){return t>=0?'t'+t:''}
 function hostPeers(){
   if(SPEC)return;
   const on=online();let ch=false;
-  for(const pid in S.pl){if(on[pid]&&on[pid].n!==S.pl[pid].n){S.pl[pid].n=on[pid].n;ch=true}}
+  for(const pid in S.pl){if(on[pid]&&(on[pid].n!==S.pl[pid].n||on[pid].k!==S.pl[pid].k)){S.pl[pid].n=on[pid].n;S.pl[pid].k=on[pid].k;ch=true}}
   if(S.ph==='play'&&S.g==='nunchi')nunchiHost(on);
   if(ch)setS({});else schedRender();
   pushLive();
 }
-function pushLive(){if(SPEC||!room||!room.live||!S||!H)return;const now=Date.now();if(H.lvT&&now-H.lvT<500){clearTimeout(H.lvTo);H.lvTo=setTimeout(pushLive,520);return}H.lvT=now;const on=online(),o={};for(const pid in on)o[pid]=[on[pid].n,on[pid].a&&on[pid].a.r===S.r?on[pid].a:null];room.live({r:S.r,on:o})}
+function pushLive(){if(SPEC||!room||!room.live||!S||!H)return;const now=Date.now();if(H.lvT&&now-H.lvT<350){clearTimeout(H.lvTo);H.lvTo=setTimeout(pushLive,370);return}H.lvT=now;const on=online(),o={};for(const pid in on)o[pid]=[on[pid].n,on[pid].a&&on[pid].a.r===S.r?on[pid].a:null,on[pid].k];room.live({r:S.r,on:o})}
 function schedRender(){if(H.raf)return;H.raf=requestAnimationFrame(()=>{H.raf=0;hostRender()})}
 
 function assignTeams(){
   const n=H.cfg.teams,on=online(),pids=shuffle(Object.keys(on));
-  const pl={};pids.forEach((pid,i)=>pl[pid]={n:on[pid].n,t:i%n});
+  const pl={};pids.forEach((pid,i)=>pl[pid]={n:on[pid].n,t:i%n,k:on[pid].k});
   const tm=Array.from({length:n},(_,i)=>({n:TEAMS[i].n,s:0}));
   setS({pl,tm,ph:'teams'});
 }
 function addLate(){
   const on=online(),pl=Object.assign({},S.pl);
-  for(const pid in on){if(!pl[pid]||pl[pid].t<0){const sizes=S.tm.map((_,t)=>Object.values(pl).filter(p=>p.t===t).length);const t=sizes.indexOf(Math.min(...sizes));pl[pid]={n:on[pid].n,t}}}
+  for(const pid in on){if(!pl[pid]||pl[pid].t<0){const sizes=S.tm.map((_,t)=>Object.values(pl).filter(p=>p.t===t).length);const t=sizes.indexOf(Math.min(...sizes));pl[pid]={n:on[pid].n,t,k:on[pid].k}}}
   setS({pl});
 }
 function unassigned(){const on=online();return Object.keys(on).filter(pid=>!S.pl[pid]||S.pl[pid].t<0)}
@@ -622,7 +675,7 @@ function openGame(g){const left=H.cfg.games.filter(k=>!S.done.includes(k)&&k!==g
 function startGame(mode){
   const g=S.g,r=rid();let d={};
   if(g==='duel')d={ds:[0,1,2].map(()=>1500+Math.floor(Math.random()*3000))};
-  if(g==='rhythm')d={p:Math.floor(Math.random()*RHY.length)};
+  if(g==='rhythm')d={p:Math.floor(Math.random()*2),rv:H.rv&&RV[H.rv]?H.rv:pick(Object.keys(RV))};
   if(g==='nunchi'){H.taps={};d={log:[],end:false}}
   if(g==='balance')d={qs:shuffle(BAL.map((_,i)=>i)).slice(0,3),qi:0,rev:false,cnt:null};
   if(g==='quiz')d={qs:shuffle(QUIZ.map((_,i)=>i)).slice(0,5),qi:0,rev:false,qt:Date.now()};
@@ -657,7 +710,7 @@ function personal(g,pid,on){
   if(g==='rhythm')return a&&typeof a.sc==='number'?a.sc:null;
   if(g==='nunchi'){for(const grp of (S.d.log||[])){if(grp.includes(pid))return(grp.length===1)?1:0}return 0}
   if(g==='balance'){let s=0;S.d.qs.forEach((q,qi)=>{const c=balCount(qi,on);const v=a&&a.v?a.v[qi]:undefined;if(v===0||v===1){if(c[v]>=c[1-v])s++}});return s}
-  if(g==='quiz'){let s=0;S.d.qs.forEach((q,qi)=>{const x=a&&a.q?a.q[qi]:null;if(Array.isArray(x)&&x[0]===QUIZ[q][2])s+=Math.round(500+500*Math.max(0,1-x[1]/15000))});return s}
+  if(g==='quiz'){let s=0;S.d.qs.forEach((q,qi)=>{const x=a&&a.q?a.q[qi]:null;if(Array.isArray(x)&&x[0]===QUIZ[q][2])s+=Math.round(500+500*Math.max(0,1-x[1]/QT))});return s}
   if(g==='liar'){const o=S.d.out;if(!o)return null;const isL=pid===S.d.liar;if(o==='caught')return isL?0:1;return isL?2:0}
   return null;
 }
@@ -704,7 +757,7 @@ function hostTick(){
   if(HYBRID)updateTabs();
   document.querySelectorAll('[data-cd]').forEach(el=>{const end=+el.dataset.cd;const s=Math.max(0,Math.ceil((end-Date.now())/1000));el.textContent=s>=60?Math.floor(s/60)+':'+String(s%60).padStart(2,'0'):s+'초'});
   if(!SPEC)vsTick();
-  if(S.ph==='play'&&S.g==='quiz'&&!S.d.rev){const on=online(),act=activePids();const all=act.length&&act.every(pid=>{const a=inp(pid,on);return a&&a.q&&a.q[S.d.qi]});if(all||Date.now()-S.d.qt>15500){S.d.rev=true;beep(880,.15);setS({})}}
+  if(S.ph==='play'&&S.g==='quiz'&&!S.d.rev){const on=online(),act=activePids();const all=act.length&&act.every(pid=>{const a=inp(pid,on);return a&&a.q&&a.q[S.d.qi]});if(all||Date.now()-S.d.qt>QT+600){S.d.rev=true;beep(880,.15);setS({})}}
   if(S.ph==='play'&&S.g==='bomb'&&S.d.st==='run'){const left=S.d.fuse-(Date.now()-S.d.t0);if(left<=0){S.d.st='boom';boom();setS({})}else{const iv=left>12000?900:left>5000?500:220;if(!H.lt||Date.now()-H.lt>iv){H.lt=Date.now();beep(1200,.04,'square',.18)}const b=$('.bombwrap');if(b)b.style.setProperty('--sp',(iv/1000)+'s')}}
 }
 
@@ -781,14 +834,15 @@ function heroHTML(g){
 function hIntro(){
   const g=GAMES[S.g];
   return `<div class="card grid">${heroHTML(S.g)}<div class="label">게임 방법 · 폰에도 같은 설명이 떠요</div><ol class="rules">${g.rules.map(r=>`<li>${esc(r)}</li>`).join('')}</ol>
+  ${S.g==='rhythm'?`<div class="row"><span class="label">종목</span>${[['rand','랜덤'],...Object.entries(RV).map(([k,v])=>[k,v.n])].map(([k,n])=>`<button class="btn ${(H.rv||'rand')===k?'go':''}" data-rv="${k}">${n}</button>`).join('')}</div>`:''}
   ${VSG.includes(S.g)?`<p class="muted" style="margin:0"><b>1:1 대결</b>은 양 팀에서 한 명씩 랜덤으로 맞붙어 한 경기씩 순서대로 진행해요. 이긴 경기가 많은 팀이 승리합니다.</p>`:''}
   <div class="row">${VSG.includes(S.g)?`<button class="btn go big" data-act="startvs">1:1 대결로 시작</button><button class="btn big" data-act="start">다같이 동시에</button>`:`<button class="btn go big" data-act="start">시작!</button>`}<button class="btn" data-act="board">점수판으로</button></div></div>${scoreHTML(false)}`;
 }
 /* ---------- live stage: every player's character acting out their current play ---------- */
 const LIVEP={};
 function liveMarkR(pid,key,r,rer){const now=Date.now(),e=LIVEP[pid];if(!e||e.key!==key||e.r!==r){LIVEP[pid]={key,t:now,r};if(e&&e.r===r){clearTimeout(liveMarkR.tm);liveMarkR.tm=setTimeout(()=>rer(),1400)}return e&&e.r===r}return now-e.t<1300}
-function liveCard(pid,a,X,rer){X=X||S;rer=rer||schedRender;const liveMark=(p,k)=>liveMarkR(p,k,X.r,rer);
-  const g=X.g,d=X.d||{},t=X.pl[pid].t,base={c:TC[t],id:pid};let o={},cls='',bub='',cap='',bar=null;
+function liveCard(pid,a,X,rer,noLane){X=X||S;rer=rer||schedRender;const liveMark=(p,k)=>liveMarkR(p,k,X.r,rer);
+  const g=X.g,d=X.d||{},t=X.pl[pid].t,base={c:TC[t],id:pid};let o={},cls='',bub='',cap='',bar=null,lane=false;
   if(g==='duel'){const ms=a&&Array.isArray(a.ms)?a.ms:[],last=ms[ms.length-1],fresh=liveMark(pid,ms.length);o={hat:'cowboy',holster:true,face:'focus'};cls='tremble';cap=ms.length?`${ms.length} / 3`:'대기';
     if(a&&a.done){const avg=Math.round(ms.reduce((x,y)=>x+y,0)/ms.length),good=avg<=420;o=Object.assign(o,{face:good?'happy':'cry',arms:good?'up':'down',drawn:true});cls=good?'jump':'';cap=`평균 ${avg}ms`}
     else if(fresh&&last!=null){if(last>=1000&&last<1500){o=Object.assign(o,{face:'shock',drawn:true,hatfly:true,smoke:true});cls='';bub='오발!'}else if(last<=380){o=Object.assign(o,{face:'smug',arms:'rfwd',hold:'gun',drawn:true,bang:true});cls='';bub=`탕! ${last}ms`}else{o=Object.assign(o,{face:'ko',stars:true,drawn:true});cls='fall';bub=`${last}ms`}}}
@@ -796,7 +850,7 @@ function liveCard(pid,a,X,rer){X=X||S;rer=rer||schedRender;const liveMark=(p,k)=
     if(a&&a.done){o.face=c>=55?'happy':'cry';o.popped=c>=55;cls=c>=55?'jump1':'';bub=c>=55?'뻥!':'피식…'}}
   else if(g==='stop'){o={arms:'rfwd',hold:'bone',face:'smug'};cap='세는 중…';cls='tremble';
     if(a&&a.done&&typeof a.t==='number'){const df=Math.abs(a.t-10);liveMark(pid,a.t);o={face:df<=.3?'happy':a.t<10?'sweat':'shock',arms:df<=.3?'up':'rfwd',hold:df<=.3?undefined:'bone'};cls=df<=.3?'jump':'';bub=`${a.t.toFixed(2)}초`;cap=df<=.3?'완벽!':a.t<10?'너무 빨라':'너무 늦어'}}
-  else if(g==='rhythm'){const sc=a&&typeof a.sc==='number'?a.sc:null,fresh=liveMark(pid,a&&a.h||0)&&!!(a&&a.h);o={hat:'helmet',hold:'hammer',arms:fresh?'rfwd':'up',face:'focus'};cap=sc==null?'준비':`${sc}%`;if(fresh&&sc!=null){bub='쾅!';o.face='happy'}
+  else if(g==='rhythm'){rmTrack(pid,a,X);lane=true;const sc=a&&typeof a.sc==='number'?a.sc:null,fresh=liveMark(pid,a&&a.h||0)&&!!(a&&a.h);o={hat:'helmet',hold:'hammer',arms:fresh?'rfwd':'up',face:'focus'};cap=sc==null?'준비':`${sc}%`;if(fresh&&sc!=null){bub='쾅!';o.face='happy'}
     if(a&&a.done){o.face=sc>=70?'happy':sc>=40?'normal':'cry';o.arms=sc>=70?'up':'down';cls=sc>=70?'jump':'';bub=sc>=85?'장인!':''}}
   else if(g==='nunchi'){const log=d.log||[];const i=log.findIndex(x=>x.includes(pid));const grp=log[i];o={face:'sweat'};cls='tremble';cap='눈치 보는 중';
     if(grp){const last=grp.includes('__last');if(last){o={face:'cry'};cls='';bub='꼴찌';cap='못 일어남'}else if(grp.length>1){o={face:'ko',stars:true};cls='fall';bub='쾅!';cap='겹침'}else{o={face:'happy',arms:'up'};cls=d.end?'jump':'jump1';bub=`${i+1}!`;cap='성공'}}}
@@ -807,7 +861,7 @@ function liveCard(pid,a,X,rer){X=X||S;rer=rer||schedRender;const liveMark=(p,k)=
   else if(g==='liar'){const voted=a&&a.vote;o={hat:'detective',face:'focus'};cap=d.st==='vote'?(voted?'투표 완료':'고민 중…'):'';
     if(d.tally&&d.tally[pid])bub=`${d.tally[pid]}표`;
     if((d.st==='guess'||d.st==='done')&&pid===d.liar){o={hat:d.st==='guess'?undefined:'disguise',face:d.st==='guess'?'shock':d.out==='caught'?'cry':'smug',arms:d.out==='escaped'?'up':'down'};cap='라이어'}}
-  return `<div class="lcard ${tc(t)}">${bub?`<div class="lbub">${esc(bub)}</div>`:''}<div class="ch ${cls}">${chr(Object.assign(base,o))}</div><div class="ln">${esc(X.pl[pid].n)}</div><div class="lcap">${esc(cap)}</div>${bar!=null?`<div class="bar" style="width:100%;height:8px"><i style="width:${bar*100}%"></i></div>`:''}</div>`;
+  return `<div class="lcard ${tc(t)} ${isMe(pid)?'me':''}">${meTag(pid)}${bub?`<div class="lbub">${esc(bub)}</div>`:''}<div class="ch ${cls}">${chr(Object.assign(base,o))}</div><div class="ln">${esc(X.pl[pid].n)}</div><div class="lcap">${esc(cap)}</div>${bar!=null?`<div class="bar" style="width:100%;height:8px"><i style="width:${bar*100}%"></i></div>`:''}${lane&&!noLane?`<canvas class="rmini" data-pid="${esc(pid)}" width="300" height="72" aria-label="리듬 진행"></canvas>`:''}</div>`;
 }
 function liveStage(){const on=online();const ps=activePids().sort((x,y)=>S.pl[x].t-S.pl[y].t);if(!ps.length)return'';return `<div class="lstage">${ps.map(pid=>liveCard(pid,inp(pid,on))).join('')}</div>`}
 
@@ -825,7 +879,7 @@ function makePairs(){
   for(const b of buckets)while(b.length){const a=b.pop(),opp=shuffle(used.filter(p=>S.pl[p].t!==S.pl[a].t))[0];if(opp)pairs.push([a,opp])}
   return pairs;
 }
-function vsFresh(d){if(S.g==='duel')d.ds=[0,1,2].map(()=>1500+Math.floor(Math.random()*3000));if(S.g==='rhythm')d.p=Math.floor(Math.random()*RHY.length)}
+function vsFresh(d){if(S.g==='duel')d.ds=[0,1,2].map(()=>1500+Math.floor(Math.random()*3000));if(S.g==='rhythm')d.p=Math.floor(Math.random()*2)}
 function vsGo(){const v=S.d.vs;if(!v||v.mst!=='vs')return;vsFresh(S.d);v.mst='go';v.at=Date.now();setS({r:rid()});beep(990,.15,'square');
   if(HYBRID&&(v.pairs[v.mi]||[]).includes(getPid()))setTab('play')}
 function vsJudge(){const v=S.d.vs;if(!v||v.mst!=='go')return;const on=online(),[a,b]=v.pairs[v.mi],g=S.g,dir=GAMES[g].dir;
@@ -852,15 +906,16 @@ function finishVs(){
 function vsHTML(X,getA,rer){
   const v=X.d.vs,g=X.g,pr=v.pairs[v.mi]||[],wins=vsWins(X);
   const side=(pid,idx)=>{if(!pid||!X.pl[pid])return'';const t=X.pl[pid].t,nm=esc(X.pl[pid].n),flip=idx===1;
-    if(v.mst==='go')return liveCard(pid,getA(pid),X,rer);
+    if(v.mst==='go')return liveCard(pid,getA(pid),X,rer,g==='rhythm');
     if(v.mst==='win'){const r=v.res[v.mi]||[null,null,-1],win=r[2]===idx,lose=r[2]===1-idx;
-      return `<div class="lcard ${tc(t)}"><div class="lbub">${esc(fmt(g,r[idx]))}</div><div class="ch ${win?'jump':lose?(flip?'fallr':'fall'):''}">${chr(Object.assign({c:TC[t],id:pid},ART[g],{face:win?'happy':lose?'ko':'normal',arms:win?'up':'down',stars:lose,hat:win?'party':ART[g].hat,flip,drawn:true,popped:g==='mash'&&win}))}</div><div class="ln">${nm}</div><div class="lcap">${win?'승리!':lose?'패배':'무승부'}</div></div>`}
-    return `<div class="lcard ${tc(t)}"><div class="ch tremble">${chr(Object.assign({c:TC[t],id:pid},ART[g],{face:'focus',flip}))}</div><div class="ln">${nm}</div><div class="lcap">${esc(X.tm[t]?X.tm[t].n+'팀':'')}</div></div>`};
+      return `<div class="lcard ${tc(t)} ${isMe(pid)?'me':''}">${meTag(pid)}<div class="lbub">${esc(fmt(g,r[idx]))}</div><div class="ch ${win?'jump':lose?(flip?'fallr':'fall'):''}">${chr(Object.assign({c:TC[t],id:pid},ART[g],{face:win?'happy':lose?'ko':'normal',arms:win?'up':'down',stars:lose,hat:win?'party':ART[g].hat,flip,drawn:true,popped:g==='mash'&&win}))}</div><div class="ln">${nm}</div><div class="lcap">${win?'승리!':lose?'패배':'무승부'}</div></div>`}
+    return `<div class="lcard ${tc(t)} ${isMe(pid)?'me':''}">${meTag(pid)}<div class="ch tremble">${chr(Object.assign({c:TC[t],id:pid},ART[g],{face:'focus',flip}))}</div><div class="ln">${nm}</div><div class="lcap">${esc(X.tm[t]?X.tm[t].n+'팀':'')}</div></div>`};
   const score=X.tm.map((x,t)=>`<span class="${tc(t)}" style="color:var(--tc)">${esc(x.n)} <b class="num">${wins[t]}</b></span>`).join('<span class="muted"> : </span>');
   const list=v.pairs.map(([a,b],i)=>{const r=v.res[i],cur=i===v.mi;const nm=p=>X.pl[p]?esc(X.pl[p].n):'?';const st=(k)=>r&&r[2]===k?' style="color:var(--bulb);font-weight:700"':'';
     return `<div class="vsli ${cur?'cur':''} ${i>v.mi?'next':''}"><span class="num">${i+1}</span><span${st(0)}>${nm(a)}</span><span class="muted">vs</span><span${st(1)}>${nm(b)}</span><span class="muted num">${r?`${esc(fmt(g,r[0]))} : ${esc(fmt(g,r[1]))}`:cur?(v.mst==='go'?'대결 중':'준비'):''}</span></div>`}).join('');
   return `<div class="vsbox"><div class="row" style="justify-content:space-between"><span class="label">${v.mi+1}경기 / ${v.pairs.length}</span><span class="disp vsscore">${score}</span></div>
     <div class="vsrow"><div class="vsside">${side(pr[0],0)}</div><div class="vsmid"><div class="vsword ${v.mst==='vs'?'pop':''}">VS</div>${v.mst==='vs'?'<div class="muted">곧 시작!</div>':v.mst==='go'?'<span class="pill live">대결 중</span>':''}</div><div class="vsside">${side(pr[1],1)}</div></div>
+    ${v.mst==='go'&&g==='rhythm'?`<div class="vslanes">${pr.filter(p=>X.pl[p]).map(p=>`<div class="vslane ${tc(X.pl[p].t)}"><span>${esc(X.pl[p].n)}</span><canvas class="rmini" data-pid="${esc(p)}" width="520" height="80" aria-label="${esc(X.pl[p].n)} 리듬 진행"></canvas></div>`).join('')}</div>`:''}
     <div class="vslist">${list}</div></div>`;
 }
 
@@ -876,7 +931,7 @@ function hPlay(){
     return `<div class="card grid">${vsHTML(S,pid=>inp(pid,on))}<div class="row">${v.mst==='vs'?'<button class="btn go big" data-act="vsgo">지금 시작</button>':v.mst==='go'?'<button class="btn" data-act="vsjudge">이 경기 바로 판정</button>':last?'<button class="btn go big" data-act="finish">결과 집계</button>':'<button class="btn go big" data-act="vsnext">다음 경기</button>'}<button class="btn" data-act="board">취소하고 점수판으로</button></div>${!SPEC&&v.mst!=='go'&&!last?'<p class="muted" style="margin:0">경기는 자동으로 넘어가요. 버튼은 기다리기 싫을 때만 누르세요.</p>':''}</div>`}
   if(['duel','stop','rhythm'].includes(g)){
     const [k,n]=doneCount();
-    return `<div class="card grid"><div class="stagebig">${k===n&&n?'모두 완료!':g==='duel'?'결투 진행 중!':g==='stop'?'다들 속으로 세는 중…':'쾅! 쾅! 쾅!'}</div><p class="muted" style="text-align:center;margin:0">완료 ${k} / ${n}명</p>
+    return `<div class="card grid"><div class="stagebig">${k===n&&n?'모두 완료!':g==='duel'?'결투 진행 중!':g==='stop'?'다들 속으로 세는 중…':(RV[d.rv]?RV[d.rv].n:'리듬')+' 진행 중!'}</div><p class="muted" style="text-align:center;margin:0">완료 ${k} / ${n}명</p>
     ${liveStage()}
     <div class="row">${endBtn}</div></div>`;
   }
@@ -905,7 +960,7 @@ function hPlay(){
   }
   if(g==='quiz'){
     const q=QUIZ[d.qs[d.qi]],act=activePids();const n=act.filter(p=>{const a=inp(p,on);return a&&a.q&&a.q[d.qi]}).length;
-    return `<div class="card grid"><div class="row" style="justify-content:space-between"><span class="label">문제 ${d.qi+1} / ${d.qs.length}</span>${d.rev?'':`<span class="pill num" data-cd="${d.qt+15000}">15초</span>`}</div>
+    return `<div class="card grid"><div class="row" style="justify-content:space-between"><span class="label">문제 ${d.qi+1} / ${d.qs.length}</span>${d.rev?'':`<span class="pill num" data-cd="${d.qt+QT}">5초</span>`}</div>
     <div class="stagebig" style="font-size:clamp(1.6rem,4vw,2.8rem)">${esc(q[0])}</div>
     <div class="choices">${q[1].map((o,i)=>`<div class="choice ${d.rev&&i===q[2]?'right':''}">${i+1}. ${esc(o)}</div>`).join('')}</div>
     ${d.rev?'':`<p class="muted" style="margin:0">답변 ${n} / ${act.length}명</p>`}
@@ -973,6 +1028,7 @@ function bindHost(){
   const cd=$('#cdbl');if(cd)cd.onchange=()=>{H.cfg.dbl=cd.checked;saveCfg()};
   const tm=$('#tmini');if(tm){tm.oninput=()=>{H.cfg.mini=tm.value;saveCfg()}}
   const tf=$('#tfin');if(tf){tf.oninput=()=>{H.cfg.fin=tf.value;saveCfg()}}
+  HV().querySelectorAll('[data-rv]').forEach(b=>b.onclick=()=>{H.rv=b.dataset.rv;hostRender()});
   HV().querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openGame(b.dataset.open));
   HV().querySelectorAll('[data-lg]').forEach(b=>b.onclick=()=>{S.d.out=b.dataset.lg==='right'?'escaped':'caught';S.d.st='done';setS({})});
   HV().querySelectorAll('[data-bl]').forEach(b=>b.onclick=()=>{const d=S.d;d.loses.push(+b.dataset.bl);d.n++;if(d.n>=3){finishGame()}else{d.st='ready';d.cat=pick(BOMB);setS({})}});
@@ -1011,14 +1067,14 @@ function plvA(pid,s){return PLV&&PLV.r===s.r&&PLV.on&&Array.isArray(PLV.on[pid])
 function playKey(s){if(!s||s.ph!=='play')return null;const v=s.d&&s.d.vs;if(!v)return s.r;return v.mst==='go'&&(v.pairs[v.mi]||[]).includes(P.pid)?s.r:'vsw'}
 function startPlayer(){
   const pid=getPid();
-  P={pid,n:store.get('pb_nick',''),S:null,ep:null,v:-1,joined:false,game:null,key:null};
+  P={pid,n:store.get('pb_nick',''),k:KSET.has(store.get('pb_kind',null))?store.get('pb_kind',null):KLIST[hsh(pid)%KLIST.length][0],S:null,ep:null,v:-1,joined:false,game:null,key:null};
   PNET=PNET||room;
-  PNET.on('st',m=>{const s=m.data;if(!s||typeof s!=='object'||!s.e)return;if(s.e===P.ep&&s.v<=P.v)return;P.ep=s.e;P.v=s.v;P.S=s;if(!HYBRID)watchSpin(s);pRender()});
+  PNET.on('st',m=>{const s=m.data;if(!s||typeof s!=='object'||!s.e)return;if(s.e===P.ep&&s.v<=P.v)return;P.ep=s.e;P.v=s.v;P.S=s;noteKinds(s.pl);KINDS[P.pid]=P.k;if(!HYBRID)watchSpin(s);pRender()});
   PNET.on('lv',m=>{PLV=m.data;PLV_CB.forEach(f=>{try{f()}catch(e){}})});
   PNET.onConnection(c=>{P.conn=c;const el=$('#conn');if(el)el.hidden=c});
   if(P.n)join(P.n);else pRender();
 }
-function join(n){P.n=n.trim().slice(0,12);if(!P.n)return;store.set('pb_nick',P.n);P.joined=true;PNET.presence({pid:P.pid,n:P.n,a:null}).catch(()=>{});keepAwake();pRender()}
+function join(n){P.n=n.trim().slice(0,12);if(!P.n)return;store.set('pb_nick',P.n);P.joined=true;store.set('pb_kind',P.k);KINDS[P.pid]=P.k;PNET.presence({pid:P.pid,n:P.n,k:P.k,a:null}).catch(()=>{});keepAwake();pRender()}
 function send(a){if(PR){PR.onSend&&PR.onSend(a);return}PNET&&PNET.presence({a}).catch(()=>{})}
 function teamOf(s){return s&&s.pl&&P&&s.pl[P.pid]?s.pl[P.pid].t:-1}
 function myTeam(){return P?teamOf(P.S):-1}
@@ -1029,11 +1085,11 @@ function pRender(){
   if(PR)return;
   const s=P.S;
   if(!P.joined){
-    PV().innerHTML=`<div class="phone"><div class="marquee"><div class="label">야유회 파티박스</div><h1 style="color:var(--bulb);font-size:2rem">참가하기</h1>${bigChr({c:TC[hsh(P.pid)%4],id:P.pid,face:'happy',arms:'up'},'jump')}</div>
-    <form class="card grid" id="jf"><label class="label" for="nick">닉네임 (최대 12자)</label><input type="text" id="nick" maxlength="12" value="${esc(P.n)}" placeholder="예: 김부장" autocomplete="off"><button class="btn go big">입장!</button></form>
+    PV().innerHTML=`<div class="phone"><div class="marquee"><div class="label">야유회 파티박스</div><h1 style="color:var(--bulb);font-size:2rem">참가하기</h1><div id="kprev">${bigChr({c:TC[hsh(P.pid)%4],id:P.pid,k:P.k,face:'happy',arms:'up'},'jump')}</div></div>
+    <form class="card grid" id="jf"><label class="label" for="nick">닉네임 (최대 12자)</label><input type="text" id="nick" maxlength="12" value="${esc(P.n)}" placeholder="예: 김부장" autocomplete="off"><div class="label">캐릭터 고르기</div>${kindPicker(P.k,TC[hsh(P.pid)%4])}<button class="btn go big">입장!</button></form>
     <p class="muted" style="margin:0">소리가 나는 게임이 있으니 무음을 꺼 주세요.</p>
     ${HYBRID?'':'<button class="btn" id="prac">기다리는 동안 혼자 연습해 보기</button>'}</div>`;
-    $('#jf').onsubmit=e=>{e.preventDefault();audio();join($('#nick').value)};const pb=$('#prac');if(pb)pb.onclick=()=>practiceMenu(()=>pRender());updateTabs();return;
+    bindKindPicker($('#jf'),k=>{P.k=k;store.set('pb_kind',k);$('#kprev').innerHTML=bigChr({c:TC[hsh(P.pid)%4],id:P.pid,k,face:'happy',arms:'up'},'jump1')});$('#jf').onsubmit=e=>{e.preventDefault();audio();join($('#nick').value)};const pb=$('#prac');if(pb)pb.onclick=()=>practiceMenu(()=>pRender());updateTabs();return;
   }
   const pk=playKey(s);
   if(pk&&P.game&&P.key===pk){P.game.update&&P.game.update(s);return}
@@ -1054,6 +1110,150 @@ function pRender(){
 }
 function pScore(s){if(!s.tm||!s.tm.length)return'';const o=s.tm.map((x,t)=>[t,x]).sort((a,b)=>b[1].s-a[1].s);return `<div class="card grid"><div class="label">현재 점수</div>${o.map(([t,x],i)=>`<div class="row ${tc(t)}" style="justify-content:space-between"><span><span class="dot"></span> ${i+1}. ${esc(x.n)}팀</span><b class="num">${x.s}점</b></div>`).join('')}</div>`}
 function bindTop(){const b=$('#rename');if(b)b.onclick=()=>{P.joined=false;pRender()}}
+
+/* ---------- rhythm challenge: three variants share one timing core ---------- */
+const RV={
+  nail:{n:'못 박기',bpm:104,hint:'"띵" 소리 다음 박자에 쾅!'},
+  toast:{n:'부장님 건배 따라하기',bpm:100,hint:'부장님이 짠 한 리듬을 그대로 따라 짠!'},
+  pong:{n:'탁구 랠리',bpm:112,hint:'공이 "딱" 튀면 바로 받아치기!'}
+};
+const TOASTP=[[[0,1,2],[0,2,3],[0,1,1.5,2],[0,.5,1,3]],[[0,2],[0,1,2,3],[0,1.5,3],[0,.5,1,1.5,2]]];
+const PONGP=[[1,1,1,.5,1,1,'r',.5,.5,1,1,.5,1],[1,.5,1,1,.5,.5,'r',1,1,.5,1,.5,1]];
+function toastPlan(p){const ph=TOASTP[p%TOASTP.length];const calls=[],hits=[];ph.forEach((pat,k)=>pat.forEach(x=>{calls.push(8*k+x);hits.push(8*k+4+x)}));return{calls,hits,phrases:ph}}
+function pongPlan(p){const pat=PONGP[p%PONGP.length];let o=0;const out=[];for(const s of pat){if(s==='r'){o+=1;continue}const b=o+s;out.push({o,b,s});o=b+1}return out}
+function rhNotes(v,p){if(v==='toast')return toastPlan(p).hits;if(v==='pong')return pongPlan(p).map(x=>x.b);return RHY[p%RHY.length]}
+const JCODE={PERFECT:'P',GREAT:'G',GOOD:'O',miss:'M'};
+// Shared timing/scoring/broadcast core. Each variant only draws and plays its own cue sounds.
+function rhCore(s,v,cueSounds){
+  const r=s.r,bpm=RV[v].bpm,beat=60000/bpm,hitsB=rhNotes(v,s.d.p||0);
+  const T0=performance.now()+1800+4*beat,bt=b=>T0+b*beat;
+  const notes=hitsB.map(b=>({b,t:bt(b),j:null}));
+  const last=hitsB[hitsB.length-1],endT=bt(last)+900;
+  let score=0,hits=0,lastLive=0,done=false;
+  const pc=()=>Math.round(score/(notes.length*3)*100);
+  const jstr=()=>notes.map(n=>n.j?JCODE[n.j]:'_').join('');
+  const cur=()=>(performance.now()-T0)/beat;
+  const live=force=>{const now=performance.now();if(done||(!force&&now-lastLive<300))return;lastLive=now;send({r,sc:pc(),h:hits,j:jstr(),b:+cur().toFixed(2),v,done:false})};
+  const ac=audio();
+  if(ac){const base=ac.currentTime+(T0-performance.now())/1000,at=b=>base+b*beat/1000;
+    for(let k=-4;k<0;k++)beep(1200,.05,'square',.16,at(k));
+    const BASS=v==='toast'?[110,0,165,0,147,0,165,131]:v==='pong'?[98,147,0,147,131,0,147,0]:[98,0,98,147,0,131,0,147];
+    for(let h=0;h<=(last+2)*2;h++){const b=h/2;if(h%2===0)beep(70,.16,'sine',.42,at(b));else noise(.04,.1,6,at(b));const f=BASS[h%8];if(f)beep(f,.2,'triangle',.16,at(b))}
+    cueSounds(at);}
+  const tap=now=>{let best=null;for(const n of notes){if(n.j)continue;const d=Math.abs(n.t-now);if(d<=230&&(!best||d<Math.abs(best.t-now)))best=n}
+    if(!best)return null;const d=Math.abs(best.t-now);let p,txt;if(d<=70){p=3;txt='PERFECT'}else if(d<=140){p=2;txt='GREAT'}else{p=1;txt='GOOD'}
+    best.j=txt;score+=p;hits++;live(true);return{n:best,p,txt}};
+  const sweep=(now,cb)=>{for(const n of notes)if(!n.j&&now-n.t>230){n.j='miss';cb&&cb(n);live(true)}};
+  const finish=()=>{done=true;const v2=pc();send({r,sc:v2,h:hits,j:jstr(),b:last+2,v,done:true});return v2};
+  return{beat,T0,bt,notes,last,endT,pc,live,tap,sweep,finish,cur,isDone:()=>done};
+}
+function rhEndSign(sg,pc,good,bad){setSign(sg,pc>=85?good[0]:pc>=70?good[1]:pc>=40?'그럭저럭':bad,pc>=70?'flash':'bad');pc>=70?fanfare():womp()}
+
+// Variant: boss toast call & response
+function rhToast(el,s){
+  const c=myC(s),plan=toastPlan(s.d.p||0);
+  el.innerHTML=`<div class="scene pub" id="sc" role="button" aria-label="부장님 리듬을 따라 탭해서 건배">
+    <div class="lights"></div><div class="ptable"></div>
+    <div class="actor" id="boss" style="left:2%;width:38%;bottom:16%"></div><div class="actor" id="me" style="right:2%;width:38%;bottom:16%"></div>
+    <div class="glass" id="gb" style="left:33%">${glassSVG()}</div><div class="glass" id="gm2" style="right:33%">${glassSVG()}</div>
+    <div class="clinkfx" id="cf" hidden>짠!</div>
+    <div class="sign" id="sg">${RV.toast.n}</div><div class="dots" id="dots"></div></div>
+    <div class="hud"><span class="big num" id="tt">0%</span><span class="muted" id="ts">${RV.toast.hint}</span></div>`;
+  const $$=q=>$(q,el),sg=$$('#sg'),tt=$$('#tt'),ts=$$('#ts'),boss=$$('#boss'),me=$$('#me'),gb=$$('#gb'),gm=$$('#gm2'),cf=$$('#cf'),dots=$$('#dots');
+  const bossA=f=>{boss.innerHTML=chr({c:'#8d93a8',id:'boss',hair:'shine',glasses:true,face:f,arms:'down'})};
+  const meA=f=>{me.innerHTML=chr({c,id:P.pid,face:f,flip:true})};bossA('smug');meA('focus');
+  const clink=(g,good)=>{g.classList.remove('up');void g.offsetWidth;g.classList.add('up');if(good){cf.hidden=false;cf.classList.remove('pop');void cf.offsetWidth;cf.classList.add('pop')}};
+  const core=rhCore(s,'toast',at=>{for(const b of plan.calls){beep(2093,.1,'triangle',.18,at(b));beep(2637,.12,'triangle',.12,at(b)+.01)}});
+  let callIdx=0,raf,lastFace='focus',signKey='';
+  const setMe=f=>{if(f!==lastFace){lastFace=f;meA(f)}};
+  const draw=()=>{const now=performance.now(),cb=core.cur();
+    while(callIdx<plan.calls.length&&cb>=plan.calls[callIdx]){clink(gb,false);callIdx++;bossA('smug')}
+    core.sweep(now,()=>{setMe('shock');bossA('sweat');setSign(sg,'부장님 표정이…','bad');signKey='miss';tt.textContent=core.pc()+'%'});
+    if(cb<0){const k=Math.ceil(-cb);const t=k<=4?String(k):RV.toast.n;if(signKey!==t){signKey=t;setSign(sg,t,k<=4?'flash':'')}}
+    else if(!core.isDone()){const ph=Math.floor(cb/8),inb=cb-ph*8,call=inb<4,t=ph>=plan.phrases.length?'':call?'부장님: 짠!':'따라 하세요!';
+      if(signKey!==t&&signKey!=='miss'||(signKey==='miss'&&call&&t)){signKey=t;setSign(sg,t,call?'':'flash')}
+      if(ph<plan.phrases.length){const pat=plan.phrases[ph],base=ph*8+(call?0:4);
+        dots.innerHTML=[0,.5,1,1.5,2,2.5,3,3.5].map(x=>{const on=pat.includes(x),bb=base+x;let cls=on?'on':'';
+          if(call&&on&&cb>=bb)cls+=' lit';
+          if(!call&&on){const n=core.notes.find(n=>n.b===bb);if(n&&n.j)cls+=n.j==='miss'?' miss':' hit'}
+          return `<i class="${cls} ${x%1?'half':''}"></i>`}).join('')}}
+    core.live();
+    if(now>core.endT&&!core.isDone()){const pc=core.finish();tt.textContent=pc+'%';ts.textContent=`정확도 ${pc}% · 제출 완료!`;setMe(pc>=70?'happy':pc>=40?'normal':'cry');bossA(pc>=70?'happy':'sweat');rhEndSign(sg,pc,['부장님 감동!','훌륭해!'],'부장님 삐짐…');dots.innerHTML=''}
+    if(!core.isDone()||now<core.endT+3000)raf=requestAnimationFrame(draw)};
+  raf=requestAnimationFrame(draw);
+  $$('#sc').addEventListener('pointerdown',e=>{e.preventDefault();audio();if(core.isDone())return;const now=performance.now();const h=core.tap(now);
+    if(!h){beep(300,.05,'triangle',.1);setMe('sweat');clink(gm,false);return}
+    clink(gm,h.p>1);beep(h.p===3?2349:1976,.12,'triangle',.22);setMe(h.p===3?'happy':h.p===2?'smug':'normal');if(signKey==='miss'){signKey='';bossA('smug')}tt.textContent=core.pc()+'%'});
+  return{stop(){cancelAnimationFrame(raf)}};
+}
+function glassSVG(){return `<svg viewBox="0 0 40 56" aria-hidden="true"><path d="M6 6 h24 l-2 46 h-20Z" fill="#ffc53d" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/><path d="M4 8 q4 -8 12 -4 q6 -6 12 0 q8 -2 8 6 q-16 4 -32 -2Z" fill="#fff" stroke="${INK}" stroke-width="2.5"/><path d="M30 16 h5 q4 0 4 4 v12 q0 4 -4 4 h-6" fill="none" stroke="${INK}" stroke-width="3"/></svg>`}
+
+// Variant: table tennis rally — opponent hits, ball bounces ("딱"), you return on the next half/quarter beat
+function rhPong(el,s){
+  const c=myC(s),plan=pongPlan(s.d.p||0);
+  el.innerHTML=`<div class="scene gym" id="sc" style="aspect-ratio:4/3" role="button" aria-label="공이 튀면 탭해서 받아치기"><svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:0;width:100%;height:100%" aria-hidden="true">
+    <rect width="400" height="300" fill="#2f6f8f"/><rect y="230" width="400" height="70" fill="#c98a4a"/><path d="M0 230 H400" stroke="${INK}" stroke-width="3"/>
+    <g id="opp"></g><g id="mee"></g>
+    <rect x="60" y="208" width="280" height="10" rx="2" fill="#2e7d4f" stroke="${INK}" stroke-width="3"/><path d="M200 208 V218" stroke="#fff" stroke-width="2"/>
+    <path d="M90 218 V262 M310 218 V262" stroke="${INK}" stroke-width="5"/><rect x="198" y="182" width="4" height="26" fill="#eee" stroke="${INK}" stroke-width="1.5"/>
+    <g id="op"></g><g id="pp"></g><g id="ball"></g><g id="fx"></g></svg><div class="sign" id="sg">${RV.pong.n}</div></div>
+    <div class="hud"><span class="big num" id="tt">0%</span><span class="muted" id="ts">${RV.pong.hint}</span></div>`;
+  const $$=q=>$(q,el),sg=$$('#sg'),tt=$$('#tt'),ts=$$('#ts'),opp=$$('#opp'),mee=$$('#mee'),op=$$('#op'),pp=$$('#pp'),ball=$$('#ball'),fx=$$('#fx');
+  const nest=(svg,x,y)=>svg.replace('<svg class="chr"',`<svg class="chr" x="${x}" y="${y}" width="120" height="156"`);
+  const oppA=f=>{opp.innerHTML=nest(chr({c:'#6a5c8f',id:'pongbot',hair:'spike',glasses:false,face:f,arms:'rfwd'}),-18,74)};
+  const meA=f=>{mee.innerHTML=nest(chr({c,id:P.pid,face:f,arms:'rfwd',flip:true}),298,74)};oppA('focus');meA('focus');
+  const paddle=(x,y,a,col)=>`<g transform="rotate(${a} ${x} ${y})"><rect x="${x-3}" y="${y}" width="6" height="18" rx="2" fill="#7a4b2a" stroke="${INK}" stroke-width="2"/><circle cx="${x}" cy="${y-6}" r="13" fill="${col}" stroke="${INK}" stroke-width="3"/></g>`;
+  const core=rhCore(s,'pong',at=>{for(const x of plan){beep(880,.05,'square',.16,at(x.o));beep(1560,.04,'square',.14,at(x.o+x.s/2))}});
+  plan.forEach((x,i)=>{x.n=core.notes[i]});
+  let raf,swingT=-1e9,oppT=-1e9,fxs=[],lastFace='focus',signKey='',oi=0;
+  const setMe=f=>{if(f!==lastFace){lastFace=f;meA(f)}};
+  const lerp=(a,b,k)=>a+(b-a)*k;
+  const ballAt=cb=>{ // returns {x,y} or null
+    for(let i=0;i<plan.length;i++){const x=plan[i],nextO=i+1<plan.length?plan[i+1].o:x.b+1.2;
+      if(cb<x.o||cb>nextO)continue;
+      const bounce=x.o+x.s/2;
+      if(cb<=bounce){const k=(cb-x.o)/(x.s/2);return{x:lerp(108,255,k),y:lerp(168,206,k)-Math.sin(k*Math.PI)*40}}
+      const hitB=x.n.j&&x.n.j!=='miss'?(x.n.hb??x.b):null;
+      if(hitB==null||cb<hitB){const k=(cb-bounce)/(x.b-bounce);if(x.n.j==='miss'||k>1.25)return k>2.5?null:{x:lerp(255,300,k)+Math.max(0,k-1)*80,y:lerp(206,170,Math.min(k,1))+Math.max(0,k-1)*40};return{x:lerp(255,300,k),y:lerp(206,168,k)-Math.sin(k*Math.PI)*16}}
+      const k=Math.min(1,(cb-hitB)/(nextO-hitB));return{x:lerp(292,108,k),y:lerp(168,168,k)-Math.sin(k*Math.PI)*70}}
+    return null};
+  const draw=()=>{const now=performance.now(),cb=core.cur();
+    while(oi<plan.length&&cb>=plan[oi].o){oppT=now;if(plan[oi].s<1){setSign(sg,'빠른 공!','flash');signKey='fast'}else if(signKey==='fast'||signKey==='miss'){setSign(sg,'');signKey=''}oi++}
+    core.sweep(now,()=>{setMe('shock');setSign(sg,'놓쳤다!','bad');signKey='miss';tt.textContent=core.pc()+'%';oppA('smug')});
+    if(cb<0){const k=Math.ceil(-cb);const t=k<=4?String(k):RV.pong.n;if(signKey!==t){signKey=t;setSign(sg,t,k<=4?'flash':'')}}else if(/^\d$/.test(signKey)){signKey='';setSign(sg,'')}
+    const oe=now-oppT,pe=now-swingT;
+    op.innerHTML=paddle(104,176,oe<160?-40:0,'#ff5e78');
+    pp.innerHTML=paddle(296,176,pe<160?40:0,'#4aa8ff');
+    const bp=cb>=0?ballAt(cb):null;
+    ball.innerHTML=bp?`<ellipse cx="${bp.x}" cy="212" rx="${6+Math.max(0,(206-bp.y))/14}" ry="2.5" fill="#0004"/><circle cx="${bp.x}" cy="${bp.y}" r="7" fill="#fff" stroke="${INK}" stroke-width="2.5"/>`:'';
+    fxs=fxs.filter(f=>now-f.t<450);fx.innerHTML=fxs.map(f=>{const k=(now-f.t)/450;return `<g opacity="${1-k}">${f.big?star(296,150-k*20,18,'#ffd64d'):''}<text x="296" y="${128-k*24}" text-anchor="middle" font-family="Black Han Sans,sans-serif" font-size="22" fill="#fff" stroke="${INK}" stroke-width="5" paint-order="stroke">${f.txt}</text></g>`}).join('');
+    core.live();
+    if(now>core.endT&&!core.isDone()){const pc=core.finish();tt.textContent=pc+'%';ts.textContent=`정확도 ${pc}% · 제출 완료!`;setMe(pc>=70?'happy':pc>=40?'normal':'cry');oppA(pc>=70?'ko':'smug');rhEndSign(sg,pc,['탁구 국가대표!','훌륭해!'],'라켓을 놓쳤다…')}
+    if(!core.isDone()||now<core.endT+3000)raf=requestAnimationFrame(draw)};
+  raf=requestAnimationFrame(draw);
+  $$('#sc').addEventListener('pointerdown',e=>{e.preventDefault();audio();if(core.isDone())return;const now=performance.now();swingT=now;const h=core.tap(now);
+    if(!h){beep(200,.05,'square',.1);setMe('sweat');return}
+    h.n.hb=core.cur();beep(h.p===3?760:620,.06,'square',.22);noise(.05,.25,6);fxs.push({t:now,txt:h.p===1?'아슬':'팍!',big:h.p>1});setMe(h.p===3?'happy':h.p===2?'smug':'normal');if(signKey==='miss'){setSign(sg,'');signKey=''}tt.textContent=core.pc()+'%'});
+  return{stop(){cancelAnimationFrame(raf)}};
+}
+
+// Spectator / waiting-phone mini lane for a rhythm player: extrapolates the player's beat between updates.
+const RMI={};
+function rmTrack(pid,a,X){if(!a||typeof a.b!=='number')return;const e=RMI[pid];if(!e||e.b!==a.b||e.j!==a.j||e.r!==X.r){RMI[pid]={b:a.b,j:a.j||'',v:a.v||X.d.rv||'nail',p:X.d.p||0,t:performance.now(),done:!!a.done,sc:a.sc||0,r:X.r}}}
+function rmLoop(){const cvs=document.querySelectorAll('canvas.rmini');if(cvs.length){const now=performance.now();
+  cvs.forEach(cv=>{const e=RMI[cv.dataset.pid];const cx=cv.getContext('2d'),W=cv.width,H=cv.height;cx.clearRect(0,0,W,H);cx.fillStyle='#1b1534';cx.fillRect(0,0,W,H);
+    const HX=46;cx.strokeStyle='#ffd64d';cx.lineWidth=3;cx.beginPath();cx.moveTo(HX,8);cx.lineTo(HX,H-8);cx.stroke();
+    if(!e){cx.fillStyle='#b0a6d6';cx.font='16px sans-serif';cx.fillText('준비 중…',HX+14,H/2+6);return}
+    const beats=rhNotes(e.v,e.p),bpm=RV[e.v]?RV[e.v].bpm:104,cur=e.done?beats[beats.length-1]+2:Math.min(e.b+(now-e.t)/(60000/bpm),e.b+2.5),U=34;
+    beats.forEach((b,i)=>{const x=HX+(b-cur)*U;if(x<-20||x>W+20)return;const j=e.j[i]||'_',y=H/2;
+      cx.lineWidth=2.5;cx.strokeStyle=INK;
+      if(e.v==='pong'){cx.fillStyle='#fff';cx.beginPath();cx.arc(x,y,9,0,7);cx.fill();cx.stroke()}
+      else if(e.v==='toast'){cx.fillStyle='#ffc53d';cx.fillRect(x-8,y-12,16,24);cx.strokeRect(x-8,y-12,16,24)}
+      else{cx.fillStyle='#b9bccb';cx.fillRect(x-3,y-14,6,26);cx.strokeRect(x-3,y-14,6,26);cx.fillStyle='#8d93a8';cx.fillRect(x-9,y-17,18,5)}
+      if(j!=='_'){cx.font='bold 14px sans-serif';cx.textAlign='center';cx.fillStyle=j==='M'?'#ff5e78':j==='P'?'#ffd64d':j==='G'?'#46d68c':'#fff';cx.fillText(j==='M'?'✕':j==='P'?'★':j==='G'?'●':'○',x,y-20)}});
+    cx.textAlign='right';cx.fillStyle='#fff';cx.font='bold 16px sans-serif';cx.fillText(`${e.sc}%`,W-8,20);cx.textAlign='left'})}
+  requestAnimationFrame(rmLoop)}
+requestAnimationFrame(rmLoop);
 
 /* =========================================================
    PLAYER GAME SCENES  (el, S) => {update, stop}
@@ -1127,7 +1327,8 @@ const PG={
   },
 
   rhythm(el,s){
-    // Rhythm-Heaven style call & response: a "ding" cue rings, the nail drops in, and you hammer it on the NEXT beat.
+    const rv=s.d.rv||'nail';if(rv==='toast')return rhToast(el,s);if(rv==='pong')return rhPong(el,s);
+    // nail variant: a "ding" cue rings, the nail drops in, and you hammer it on the NEXT beat: a "ding" cue rings, the nail drops in, and you hammer it on the NEXT beat.
     const r=s.r,c=myC(s),pat=RHY[s.d.p]||RHY[0],beat=60000/104,SP=104/beat;
     const PX=120,PY=186,L=105,TH_HIT=-18*Math.PI/180,TH_UP=-82*Math.PI/180;
     const HX=PX+L*Math.cos(TH_HIT)-13*Math.sin(TH_HIT),HY=PY+L*Math.sin(TH_HIT)+13*Math.cos(TH_HIT),TOP=200;
@@ -1152,7 +1353,8 @@ const PG={
       for(let h=0;h<=(last+2)*2;h++){const b=h/2;if(h%2===0)beep(70,.16,'sine',.45,at(b));else noise(.04,.12,6,at(b));const f=BASS[h%8];if(f)beep(f,.2,'triangle',.18,at(b))}
       for(const n of notes)beep(1760,.09,'sine',.22,at(n.b-1));}
     let score=0,raf,done=false,swingT=-1e9,fxs=[],lastFace='focus',lastLive=0,hits=0;
-    const live=hit=>{if(hit)hits++;const now=performance.now();if(done||now-lastLive<350)return;lastLive=now;send({r,sc:Math.round(score/(notes.length*3)*100),h:hits,done:false})};
+    const jstr=()=>notes.map(n=>n.j?JCODE[n.j]:'_').join('');
+    const live=hit=>{if(hit)hits++;const now=performance.now();if(done||now-lastLive<300)return;lastLive=now;send({r,sc:Math.round(score/(notes.length*3)*100),h:hits,j:jstr(),b:+((now-T0)/beat).toFixed(2),v:'nail',done:false})};
     const setFace=f=>{if(f!==lastFace){lastFace=f;face(f)}};
     const nailSVG=(x,state,drop)=>{const y0=HY-drop;
       if(state==='in')return `<ellipse cx="${x}" cy="${TOP}" rx="10" ry="3.5" fill="#8d93a8" stroke="${INK}" stroke-width="2.5"/>`;
@@ -1163,14 +1365,14 @@ const PG={
       let h='';for(const n of notes){if(now<n.cue)continue;const x=HX+(n.t-now)*SP;if(x<-30||x>430)continue;const k=Math.min(1,(now-n.cue)/160);
         if(!n.j&&n.t-now<-230){n.j='miss';setFace('shock');setSign(sg,'놓쳤다!','bad');tt.textContent=Math.round(score/(notes.length*3)*100)+'%';live(false)}
         h+=nailSVG(x,n.j==='miss'?'miss':n.j==='GOOD'?'bent':n.j?'in':'up',(1-k)*70)}
-      nl.innerHTML=h;
+      nl.innerHTML=h;live(false);
       const e=now-swingT;let th=TH_UP;if(e<70)th=TH_HIT;else if(e<240)th=TH_HIT+(TH_UP-TH_HIT)*((e-70)/170);
       const deg=th*180/Math.PI;
       hm.innerHTML=`<g transform="rotate(${deg.toFixed(1)} ${PX} ${PY})"><path d="M${PX} ${PY} H${PX+52}" stroke="${INK}" stroke-width="16" stroke-linecap="round"/><path d="M${PX} ${PY} H${PX+52}" stroke="${c}" stroke-width="9" stroke-linecap="round"/><path d="M${PX+46} ${PY} H${PX+L}" stroke="${INK}" stroke-width="11" stroke-linecap="round"/><path d="M${PX+46} ${PY} H${PX+L}" stroke="#c98a4a" stroke-width="6" stroke-linecap="round"/><rect x="${PX+L-9}" y="${PY-15}" width="18" height="30" rx="3" fill="#8d93a8" stroke="${INK}" stroke-width="3"/></g>`;
       fxs=fxs.filter(f=>now-f.t<450);fx.innerHTML=fxs.map(f=>{const k=(now-f.t)/450;return `<g opacity="${1-k}" transform="translate(${HX} ${TOP-6}) scale(${.6+k*.8}) translate(${-HX} ${-(TOP-6)})">${f.big?star(HX,TOP-6,26,'#ffd64d'):''}<text x="${HX+(f.big?0:24)}" y="${TOP-40-k*20}" text-anchor="middle" font-family="Black Han Sans,sans-serif" font-size="${f.big?30:20}" fill="#fff" stroke="${INK}" stroke-width="5" paint-order="stroke">${f.txt}</text></g>`}).join('');
       if(now<T0){const k=Math.ceil((T0-now)/beat);if(k<=4&&sg.textContent!==String(k))setSign(sg,String(k),'flash')}
       else if(sg.textContent&&/^\d$/.test(sg.textContent))setSign(sg,'');
-      if(now>endT&&!done){done=true;const pc=Math.round(score/(notes.length*3)*100);send({r,sc:pc,done:true});tt.textContent=pc+'%';ts.textContent=`정확도 ${pc}% · 제출 완료!`;
+      if(now>endT&&!done){done=true;const pc=Math.round(score/(notes.length*3)*100);send({r,sc:pc,h:hits,j:jstr(),b:last+2,v:'nail',done:true});tt.textContent=pc+'%';ts.textContent=`정확도 ${pc}% · 제출 완료!`;
         setFace(pc>=70?'happy':pc>=40?'normal':'cry');setSign(sg,pc>=85?'장인 인증!':pc>=70?'훌륭해!':pc>=40?'그럭저럭':'못이 다 휘었다…',pc>=70?'flash':'bad');pc>=70?fanfare():womp()}
       raf=requestAnimationFrame(draw)};
     raf=requestAnimationFrame(draw);
@@ -1225,8 +1427,8 @@ const PG={
       el.innerHTML=`<div class="scene studio short">${extra}<div class="actor ${d.rev&&ok?'jump':''}" style="left:32%;width:36%;bottom:16%">${chr({c,id:P.pid,face,arms:d.rev&&ok?'up':'rfwd',hold:d.rev&&ok?undefined:'mic',wet:d.rev&&!ok})}</div><div class="podium">${d.qi+1}번 문제</div>${sign?`<div class="sign ${ok?'flash':'bad'}">${sign}</div>`:''}</div>
         ${d.rev?'':`<div class="timerbar"><i id="tb"></i></div>`}
         <div class="disp" style="font-size:1.4rem">${esc(Q[0])}</div><div class="grid" style="gap:10px">${Q[1].map((o,i)=>`<button class="choice ${d.rev&&i===Q[2]?'right':''} ${my&&my[0]===i?'pick':''}" data-c="${i}" ${my||d.rev?'disabled':''}>${i+1}. ${esc(o)}</button>`).join('')}</div>`;
-      el.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{if(q[d.qi]||s2.d.rev)return;q[d.qi]=[+b.dataset.c,Math.round(performance.now()-seen[d.qi])];send({r,q});beep(700,.06);draw(s2)});
-      cancelAnimationFrame(bar);const tb=$('#tb',el);if(tb){const t0=seen[d.qi];const tick=()=>{const k=Math.max(0,1-(performance.now()-t0)/15000);tb.style.transform=`scaleX(${k})`;if(k>0)bar=requestAnimationFrame(tick)};tick()}
+      el.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{if(q[d.qi]||s2.d.rev||performance.now()-seen[d.qi]>QT)return;q[d.qi]=[+b.dataset.c,Math.round(performance.now()-seen[d.qi])];send({r,q});beep(700,.06);draw(s2)});
+      cancelAnimationFrame(bar);const tb=$('#tb',el);if(tb){const t0=seen[d.qi];const tick=()=>{const k=Math.max(0,1-(performance.now()-t0)/QT);tb.style.transform=`scaleX(${k})`;if(k>0)bar=requestAnimationFrame(tick);else if(!q[d.qi])el.querySelectorAll('[data-c]').forEach(b=>b.disabled=true)};tick()}
       if(d.rev&&played!==d.qi){played=d.qi;if(ok)fanfare();else{setTimeout(()=>noise(.5,.3,1),350);womp()}}};
     draw(s);return{update:draw,stop(){cancelAnimationFrame(bar)}}
   },
@@ -1283,12 +1485,14 @@ function practice(g,back){
   if(g==='duel'){s.d={ds:[0,1,2].map(()=>1500+Math.floor(Math.random()*3000))};PR.onSend=a=>{if(a.done){const v=a.ms.reduce((x,y)=>x+y,0)/a.ms.length;note(`평균 <b>${Math.round(v)}ms</b> · 250~350ms면 빠른 편이에요`)}};mount()}
   else if(g==='mash'){PR.onSend=a=>{if(a.done)note(`<b>${a.c}회</b> · 10초에 70회를 넘기면 상위권이에요`)};mount()}
   else if(g==='stop'){PR.onSend=a=>{if(a.done)note(`10초와 <b>${Math.abs(a.t-10).toFixed(2)}초</b> 차이`)};mount()}
-  else if(g==='rhythm'){s.d={p:Math.floor(Math.random()*RHY.length)};PR.onSend=a=>{if(a.done)note(`정확도 <b>${a.sc}%</b>`)};mount()}
+  else if(g==='rhythm'){const rv=RV[practice.rv]?practice.rv:'nail';s.d={p:Math.floor(Math.random()*2),rv};
+    const bar=document.createElement('div');bar.className='row';bar.innerHTML=Object.entries(RV).map(([k,v])=>`<button class="btn ${k===rv?'go':''}" data-prv="${k}">${v.n}</button>`).join('');gm.before(bar);bar.querySelectorAll('[data-prv]').forEach(b=>b.onclick=()=>{practice.rv=b.dataset.prv;practice(g,back)});
+    PR.onSend=a=>{if(a.done)note(`정확도 <b>${a.sc}%</b>`)};mount()}
   else if(g==='quiz'){
     s.d={qs:shuffle(QUIZ.map((_,i)=>i)).slice(0,5),qi:0,rev:false};let tot=0;const answered={};
     const reveal=()=>{if(s.d.rev)return;s.d.rev=true;up();T(()=>{if(s.d.qi<s.d.qs.length-1){s.d.qi++;s.d.rev=false;arm();up()}else note(`최종 <b>${tot}점</b> (만점 5,000점)`)},2400)};
-    const arm=()=>{const qi=s.d.qi;T(()=>{if(s.d.qi===qi&&!answered[qi])reveal()},15000)};
-    PR.onSend=a=>{const qi=s.d.qi,x=a.q&&a.q[qi];if(!x||answered[qi])return;answered[qi]=1;const ok=x[0]===QUIZ[s.d.qs[qi]][2];const p=ok?Math.round(500+500*Math.max(0,1-x[1]/15000)):0;tot+=p;note(ok?`+${p}점 (${(x[1]/1000).toFixed(1)}초)`:'0점');T(reveal,500)};
+    const arm=()=>{const qi=s.d.qi;T(()=>{if(s.d.qi===qi&&!answered[qi])reveal()},QT+300)};
+    PR.onSend=a=>{const qi=s.d.qi,x=a.q&&a.q[qi];if(!x||answered[qi])return;answered[qi]=1;const ok=x[0]===QUIZ[s.d.qs[qi]][2];const p=ok?Math.round(500+500*Math.max(0,1-x[1]/QT)):0;tot+=p;note(ok?`+${p}점 (${(x[1]/1000).toFixed(1)}초)`:'0점');T(reveal,500)};
     mount();arm();
   }
   else if(g==='balance'){
