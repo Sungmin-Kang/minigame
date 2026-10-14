@@ -64,6 +64,14 @@ img{max-width:100%}
 .dots i{width:14px;height:14px;border-radius:50%;background:#0003;border:2px solid #0004}
 .dots i.half{width:9px;height:9px;align-self:center}
 .dots i.on{border-color:#fff;background:transparent}
+.scene.beat{filter:brightness(1.1)}
+.scene.kick{animation:skick .14s ease-out}
+@keyframes skick{40%{transform:translate(2px,3px) scale(1.012)}}
+.combo{font-family:var(--display);font-size:1.4rem;color:var(--ok);min-width:5em}
+.combo.pop{animation:signpopb .25s cubic-bezier(.3,1.8,.6,1)}
+.rank{position:absolute;left:50%;top:44%;z-index:4;font-family:var(--display);font-size:clamp(2.2rem,12vw,4rem);padding:4px 22px;border:6px solid currentColor;border-radius:16px;background:#fffffff0;transform:translate(-50%,-50%) rotate(-8deg);animation:stamp .45s cubic-bezier(.3,1.6,.5,1) both;white-space:nowrap}
+.rank.r1{color:#e0336a}.rank.r2{color:#e08a00}.rank.r3{color:#2c7be5}.rank.r4{color:#6b6880}
+@keyframes stamp{from{transform:translate(-50%,-50%) rotate(-8deg) scale(2.4);opacity:0}to{transform:translate(-50%,-50%) rotate(-8deg) scale(1);opacity:1}}
 .dots i.now{transform:scale(1.35)}
 .dots i.lit{background:#fff}.dots i.hit{background:var(--ok);border-color:var(--ok)}.dots i.miss{background:var(--hot);border-color:var(--hot)}
 .vslanes{display:grid;gap:8px;width:100%;max-width:640px;margin:0 auto}.vslane{display:grid;grid-template-columns:5.5em 1fr;gap:8px;align-items:center}.vslane>span{font-weight:700;color:var(--tc);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.vslane canvas.rmini{margin:0}
@@ -287,7 +295,7 @@ const GAMES={
   stop:{n:'10초 기다려!',k:'감각',dir:'low',
     rules:['강아지에게 "기다려!"를 시켰습니다. 시계는 처음 3초만 보여요.','속으로 세다가 정확히 10초라고 느낄 때 탭해서 간식을 주세요.','너무 빠르면 강아지가 어리둥절, 너무 늦으면 잠들어 버립니다.']},
   rhythm:{n:'리듬 챌린지',k:'리듬',dir:'high',
-    rules:['소리를 켜 주세요. 3가지 종목 중 하나가 나와요: 못 박기, 부장님 건배 따라하기, 탁구 랠리.','시작 전에 박자에 맞춰 4번 톡톡 치면, 각자 폰의 소리 지연을 자동으로 맞춰 줘요.','못 박기는 "띵" 다음 박자에 쾅! 건배는 부장님이 짠 한 리듬을 따라 짠! 탁구는 공이 "딱" 튀면 받아치기!','박자가 정확할수록 점수가 높아요. 정확도로 겨룹니다.']},
+    rules:['소리를 켜 주세요. 3가지 종목 중 하나가 나와요: 못 박기, 부장님 건배 따라하기, 탁구 랠리.','종목마다 전용 배경 음악이 나와요. 소리를 켜고, 시작 전 "톡톡" 4박에 맞춰 치면 폰 지연을 자동으로 맞춰 줍니다.','못 박기는 "띵" 다음 박자에 쾅! 건배는 부장님이 짠 한 리듬을 따라 짠! 탁구는 공이 "딱" 튀면 받아치기!','박자가 정확할수록 점수가 높아요. 정확도로 겨룹니다.']},
   nunchi:{n:'디지털 눈치게임',k:'눈치',dir:'high',
     rules:['시작하면 아무 때나 화면을 탭해 벌떡 일어나며 숫자를 외칩니다.','0.7초 안에 겹쳐서 일어난 사람들은 머리를 쾅! 모두 탈락.','끝까지 못 일어난 마지막 1명도 탈락입니다.']},
   balance:{n:'밸런스 게임',k:'다수결',dir:'high',
@@ -337,7 +345,7 @@ const LIAR={
   '동물':['기린','펭귄','고양이','코끼리','문어','다람쥐','거북이','판다']
 };
 const BOMB=['과일 이름','라면 이름','우리나라 도시 이름','나라 이름','과자 이름','술 종류','동물 이름','반찬 이름','색깔 이름','"ㄱ"으로 시작하는 단어','회사에서 자주 쓰는 말','운동 종목'];
-const RHY=[[1,3,5,7,9,10,11,13,14,15,17,19],[1,2,3,5,7,8,9,11,13,13.5,15,17]];
+const RHY=[[1,3,5,7,9,11,13,14,15,17,19,21,23,25,27,29,30,31],[1,3,5,7,9,10,11,13,15,17,19,21,23,25,26,27,29,31]];
 const DEF_MINI=['소주 한 잔 원샷','팀원끼리 러브샷','건배사 하고 다 같이 한 잔','맥주 한 잔 비우기','옆 팀이 말아주는 한 잔','다음 잔 따르기 담당','팀 단체 애교 한 번'];
 const DEF_FINAL=['오늘 밤 뒷정리 전담','내일 아침 식사 준비','설거지 담당','쓰레기 분리수거 담당','내일 아침 해장 음료 셔틀','퇴실 청소 담당'];
 const QT=5000; // quiz time per question (ms)
@@ -587,7 +595,7 @@ function castHTML(){const set=[['duel',0],['mash',1],['rhythm',2],['liar',3],['q
 function renderIntro(){
   const ok=netOK();
   app.innerHTML=`<div class="wrap">
-  <div class="marquee"><div class="hdr"><div><div class="label">8인 야유회용 · 계정 없이 QR로 참가하는 미니게임 9종 · 버전 10.14-5</div><h1>야유회 파티박스</h1></div>
+  <div class="marquee"><div class="hdr"><div><div class="label">8인 야유회용 · 계정 없이 QR로 참가하는 미니게임 9종 · 버전 10.15-1</div><h1>야유회 파티박스</h1></div>
   <div class="row">${ok?`<button class="btn go big" id="bmk">방 만들기</button><button class="btn big" id="bh">TV·노트북 진행 화면</button>`:`<span class="pill">연결 모듈을 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침하세요.</span>`}</div></div>${castHTML()}</div>
   ${ok?`<form class="card row" id="mkf" hidden style="justify-content:space-between"><label class="label" for="mknick">방장 닉네임 · 방장도 같이 플레이해요</label><div class="row" style="flex:1;min-width:240px;justify-content:flex-end"><input type="text" id="mknick" maxlength="12" placeholder="예: 강선임" autocomplete="off" style="max-width:200px"><button class="btn go">만들기</button></div><div style="flex-basis:100%">${kindPicker(store.get('pb_kind','bean'),TC[0])}</div></form>`:''}
   ${ok?`<form class="card row" id="jc" style="justify-content:space-between"><label class="label" for="jcode">참가자는 방장 폰의 QR을 찍거나, 방 코드를 입력하세요</label><div class="row" style="flex:1;min-width:240px;justify-content:flex-end"><input type="text" id="jcode" maxlength="6" placeholder="예: K7QMR" autocomplete="off" style="max-width:160px;text-transform:uppercase;font-family:var(--display);font-size:1.4rem;letter-spacing:.2em"><button class="btn go">입장</button><button type="button" class="btn" id="jw">관전</button></div></form>`:''}
@@ -672,11 +680,11 @@ function addLate(){
 }
 function unassigned(){const on=online();return Object.keys(on).filter(pid=>!S.pl[pid]||S.pl[pid].t<0)}
 
-function openGame(g){const left=H.cfg.games.filter(k=>!S.done.includes(k)&&k!==g);setS({ph:'intro',g,dbl:!!H.cfg.dbl&&left.length===0,res:null,pen:null,d:{}})}
+function openGame(g){const left=H.cfg.games.filter(k=>!S.done.includes(k)&&k!==g);setS({rpre:g==='rhythm'?(RV[H.rv]?H.rv:pick(Object.keys(RV))):null,ph:'intro',g,dbl:!!H.cfg.dbl&&left.length===0,res:null,pen:null,d:{}})}
 function startGame(mode){
   const g=S.g,r=rid();let d={};
   if(g==='duel')d={ds:[0,1,2].map(()=>1500+Math.floor(Math.random()*3000))};
-  if(g==='rhythm')d={p:Math.floor(Math.random()*2),rv:H.rv&&RV[H.rv]?H.rv:pick(Object.keys(RV))};
+  if(g==='rhythm')d={p:Math.floor(Math.random()*2),rv:S.rpre&&RV[S.rpre]?S.rpre:(H.rv&&RV[H.rv]?H.rv:pick(Object.keys(RV)))};
   if(g==='nunchi'){H.taps={};d={log:[],end:false}}
   if(g==='balance')d={qs:shuffle(BAL.map((_,i)=>i)).slice(0,3),qi:0,rev:false,cnt:null};
   if(g==='quiz')d={qs:shuffle(QUIZ.map((_,i)=>i)).slice(0,5),qi:0,rev:false,qt:Date.now()};
@@ -868,7 +876,7 @@ function liveStage(){const on=online();const ps=activePids().sort((x,y)=>S.pl[x]
 
 /* ---------- 1:1 versus mode (duel, mash, stop, rhythm): random cross-team pairs, played one match at a time ---------- */
 const VSG=['duel','mash','stop','rhythm'];
-const VS_MAX={duel:26000,mash:18000,stop:26000,rhythm:26000};
+const VS_MAX={duel:26000,mash:18000,stop:26000,rhythm:75000};
 function makePairs(){
   const buckets=S.tm.map((_,t)=>shuffle(activePids().filter(p=>S.pl[p].t===t))).filter(b=>b.length);
   const pairs=[],used=[];
@@ -1029,7 +1037,7 @@ function bindHost(){
   const cd=$('#cdbl');if(cd)cd.onchange=()=>{H.cfg.dbl=cd.checked;saveCfg()};
   const tm=$('#tmini');if(tm){tm.oninput=()=>{H.cfg.mini=tm.value;saveCfg()}}
   const tf=$('#tfin');if(tf){tf.oninput=()=>{H.cfg.fin=tf.value;saveCfg()}}
-  HV().querySelectorAll('[data-rv]').forEach(b=>b.onclick=()=>{H.rv=b.dataset.rv;hostRender()});
+  HV().querySelectorAll('[data-rv]').forEach(b=>b.onclick=()=>{H.rv=b.dataset.rv;setS({rpre:RV[H.rv]?H.rv:pick(Object.keys(RV))})});
   HV().querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openGame(b.dataset.open));
   HV().querySelectorAll('[data-lg]').forEach(b=>b.onclick=()=>{S.d.out=b.dataset.lg==='right'?'escaped':'caught';S.d.st='done';setS({})});
   HV().querySelectorAll('[data-bl]').forEach(b=>b.onclick=()=>{const d=S.d;d.loses.push(+b.dataset.bl);d.n++;if(d.n>=3){finishGame()}else{d.st='ready';d.cat=pick(BOMB);setS({})}});
@@ -1101,7 +1109,7 @@ function pRender(){
   else if(s.ph==='lobby')body=`<div class="card grid">${me({face:'happy',arms:'up'},'jump')}<div class="disp" style="font-size:1.8rem;text-align:center">입장 완료!</div><p class="muted" style="margin:0;text-align:center">곧 팀이 나뉩니다. 잠시 기다려 주세요.</p></div>`;
   else if(t<0&&s.ph!=='final')body=`<div class="card grid">${me({face:'sweat'})}<div class="disp" style="font-size:1.6rem;text-align:center">팀 배정 대기 중</div><p class="muted" style="margin:0;text-align:center">방장에게 팀 배정을 요청하세요.</p></div>`;
   else if(s.ph==='teams')body=`<div class="team ${tc(t)}" style="text-align:center;padding:24px">${me({face:'happy',arms:'up'},'jump')}<div class="label">당신의 팀</div><div class="pt" style="color:var(--tc);font-size:3.2rem">${esc(s.tm[t].n)}팀</div><div class="mem">${Object.values(s.pl).filter(p=>p.t===t).map(p=>esc(p.n)).join(' · ')}</div></div>`;
-  else if(s.ph==='intro'){const g=GAMES[s.g];body=`<div class="card grid">${me(Object.assign({},ART[s.g]))}<div class="label">${g.k}${s.dbl?' · 점수 2배':''}</div><div class="disp" style="font-size:2rem;color:var(--bulb)">${g.n}</div><ol class="rules">${g.rules.map(r=>`<li>${esc(r)}</li>`).join('')}</ol><p class="muted" style="margin:0">방장이 시작하면 바로 시작됩니다.</p></div>`}
+  else if(s.ph==='intro'){const g=GAMES[s.g];if(s.g==='rhythm'&&s.rpre)prefetchSong(s.rpre);body=`<div class="card grid">${me(Object.assign({},ART[s.g]))}<div class="label">${g.k}${s.dbl?' · 점수 2배':''}</div><div class="disp" style="font-size:2rem;color:var(--bulb)">${g.n}</div><ol class="rules">${g.rules.map(r=>`<li>${esc(r)}</li>`).join('')}</ol><p class="muted" style="margin:0">방장이 시작하면 바로 시작됩니다.</p></div>`}
   else if(s.ph==='play'){PV().innerHTML=`<div class="phone">${pTop()}<div id="gm" style="display:flex;flex-direction:column;gap:14px"></div></div>`;bindTop();P.key=pk;P.game=(pk==='vsw'?PG.vswatch:(PG[s.g]||PG.watch))($('#gm'),s);updateTabs();return}
   else if(s.ph==='res'){const row=s.res.tr.find(x=>x[0]===t),mx=Math.max(...s.res.tr.map(x=>x[2])),win=row&&row[2]===1,lose=row&&row[2]===mx&&mx>1;body=`<div class="team ${tc(t)}" style="text-align:center;padding:24px">${me({face:win?'happy':lose?'ko':'normal',arms:win?'up':'down',hat:win?'party':undefined,stars:lose},win?'jump':'')}<div class="label">${esc(GAMES[s.g].n)} 결과</div><div class="pt">${row?row[2]+'위':'—'}</div><div class="muted">${row?esc(row[1])+' · +'+row[3]+'점':''}</div></div>${pScore(s)}`}
   else if(s.ph==='pen'){const mine=s.pen.teams.includes(t);body=`<div class="card grid" style="text-align:center">${me({face:mine?'cry':'happy',arms:mine?'down':'up'})}<div class="label">${mine?'우리 팀 벌칙!':'벌칙 당첨 팀'}</div><div class="disp" style="font-size:1.6rem">${s.pen.teams.map(x=>esc(s.tm[x].n)+'팀').join(' · ')}</div><div class="disp" style="font-size:2.2rem;color:${mine?'var(--hot)':'var(--bulb)'}">${esc(s.pen.text)}</div></div>`}
@@ -1118,58 +1126,203 @@ function bindTop(){const b=$('#rename');if(b)b.onclick=()=>{P.joined=false;pRend
 const RV={
   nail:{n:'못 박기',bpm:92,hint:'"띵" 소리가 나면 딱 한 박자 뒤에 쾅!'},
   toast:{n:'부장님 건배 따라하기',bpm:84,hint:'부장님이 짠 한 리듬을 다음 마디에 그대로 따라 짠!'},
-  pong:{n:'탁구 랠리',bpm:92,hint:'공이 "딱" 튀면 바로 받아치기!'}
+  pong:{n:'탁구 랠리',bpm:96,hint:'공이 "딱" 튀면 바로 받아치기!'}
 };
 const TOASTP=[[[0,1,2,3],[0,2],[0,1,2],[0,2,3]],[[0,2],[0,1,2,3],[1,3],[0,1,2]]];
-const PONGP=[[1,1,1,1,'r',1,1,1,'r',1,1,.5,1],[1,1,1,'r',1,1,1,1,'r',1,.5,1,1]];
+const PONGP=[[1,1,1,1,'r',1,1,1,1,'r',1,1,.5,1,1],[1,1,1,'r',1,1,1,1,'r',1,.5,1,1,1]];
 const WIN={P:90,G:160,O:250,MAX:300};
 function toastPlan(p){const ph=TOASTP[p%TOASTP.length];const calls=[],hits=[];ph.forEach((pat,k)=>pat.forEach(x=>{calls.push(8*k+x);hits.push(8*k+4+x)}));return{calls,hits,phrases:ph}}
 function pongPlan(p){const pat=PONGP[p%PONGP.length];let o=0;const out=[];for(const s of pat){if(s==='r'){o+=1;continue}const b=o+s;out.push({o,b,s});o=b+1}return out}
 function rhNotes(v,p){if(v==='toast')return toastPlan(p).hits;if(v==='pong')return pongPlan(p).map(x=>x.b);return RHY[p%RHY.length]}
 const JCODE={PERFECT:'P',GREAT:'G',GOOD:'O',miss:'M'};
-// Shared timing/scoring/broadcast core. Each variant only draws and plays its own cue sounds.
-function rhCore(s,v,cueSounds){
-  const r=s.r,bpm=RV[v].bpm,beat=60000/bpm,hitsB=rhNotes(v,s.d.p||0);
-  const T0=performance.now()+1500+8*beat,bt=b=>T0+b*beat;
-  const notes=hitsB.map(b=>({b,t:bt(b),j:null}));
-  const last=hitsB[hitsB.length-1],endT=bt(last)+1100;
-  let score=0,hits=0,lastLive=0,done=false,off=null;const warm=[];
-  const ac=audio();
-  const est=ac?Math.round(((ac.outputLatency||0)+(ac.baseLatency||0))*1000):0;
-  const offset=()=>off!=null?off:Math.max(0,Math.min(250,est));
-  const calibrate=()=>{if(off!=null)return;if(warm.length>=2){const a=warm.slice().sort((x,y)=>x-y);off=Math.max(-60,Math.min(320,Math.round(a[Math.floor(a.length/2)])))}else off=Math.max(0,Math.min(250,est))};
+
+/* ---------- original backing tracks ----------
+   Each round renders its song (backing + cue sounds) offline into one buffer, then plays it.
+   Judging uses the same start time, so music, cues and hit windows never drift apart. */
+const SONG_SR=22050,SONG_PRE=.25;
+const m2f=m=>440*Math.pow(2,(m-69)/12);
+function songSynth(ctx){
+  const comp=ctx.createDynamicsCompressor();comp.threshold.value=-18;comp.ratio.value=8;comp.knee.value=6;comp.attack.value=.003;comp.release.value=.2;comp.connect(ctx.destination);
+  const master=ctx.createGain();master.gain.value=.62;master.connect(comp);
+  const sr=ctx.sampleRate;
+  const ir=ctx.createBuffer(1,Math.floor(sr*.8),sr),ird=ir.getChannelData(0);for(let i=0;i<ird.length;i++)ird[i]=(Math.random()*2-1)*Math.pow(1-i/ird.length,3);
+  const rev=ctx.createConvolver();rev.buffer=ir;const rg=ctx.createGain();rg.gain.value=.2;rev.connect(rg);rg.connect(master);
+  const nb=ctx.createBuffer(1,sr,sr),nd=nb.getChannelData(0);for(let i=0;i<sr;i++)nd[i]=Math.random()*2-1;
+  const route=(node,wet)=>{node.connect(master);if(wet){const w=ctx.createGain();w.gain.value=wet;node.connect(w);w.connect(rev)}};
+  const envG=(t,vol,a,hold,r)=>{const g=ctx.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+a);g.gain.setValueAtTime(vol,t+a+hold);g.gain.exponentialRampToValueAtTime(.0001,t+a+hold+r);return g};
+  const tone=(t,f,o={})=>{const{type='triangle',vol=.2,a=.005,hold=.05,r=.12,lp=0,wet=0,to=0,bt=.1,det=0}=o;
+    const osc=ctx.createOscillator();osc.type=type;osc.frequency.setValueAtTime(f,t);if(to)osc.frequency.exponentialRampToValueAtTime(to,t+bt);if(det)osc.detune.value=det;
+    const g=envG(t,vol,a,hold,r);let n=osc;if(lp){const fl=ctx.createBiquadFilter();fl.type='lowpass';fl.frequency.value=lp;osc.connect(fl);n=fl}n.connect(g);route(g,wet);osc.start(t);osc.stop(t+a+hold+r+.05)};
+  const nz=(t,o={})=>{const{vol=.2,a=.001,hold=0,r=.08,type='highpass',f=6000,q=.7,wet=0}=o;const s=ctx.createBufferSource();s.buffer=nb;const fl=ctx.createBiquadFilter();fl.type=type;fl.frequency.value=f;fl.Q.value=q;const g=envG(t,vol,a,hold,r);s.connect(fl);fl.connect(g);route(g,wet);s.start(t,Math.random()*.5);s.stop(t+a+hold+r+.05)};
+  return{
+    kick:(t,v=.9)=>{tone(t,160,{type:'sine',vol:v,a:.002,hold:.02,r:.22,to:45,bt:.12});tone(t,900,{type:'triangle',vol:v*.12,a:.001,hold:0,r:.02})},
+    snare:(t,v=.3)=>{nz(t,{vol:v,type:'bandpass',f:1900,q:.6,r:.13,wet:.15});tone(t,200,{type:'triangle',vol:v*.6,hold:.01,r:.07,to:150,bt:.06})},
+    brush:(t,v=.1)=>nz(t,{vol:v,type:'bandpass',f:3200,q:.5,a:.01,r:.12}),
+    hat:(t,v=.09,open=false)=>nz(t,{vol:v,f:7500,r:open?.2:.035}),
+    ride:(t,v=.06)=>{nz(t,{vol:v,f:5200,r:.35,wet:.1});tone(t,2900,{type:'sine',vol:v*.25,hold:0,r:.4})},
+    clap:(t,v=.25)=>{[0,.011,.022].forEach((d,i)=>nz(t+d,{vol:v*(i===2?1:.6),type:'bandpass',f:1300,q:1.2,r:i===2?.12:.015,wet:.25}))},
+    crash:(t,v=.16)=>nz(t,{vol:v,f:4500,r:1.4,wet:.3}),
+    bass:(t,m,d,v=.26)=>{tone(t,m2f(m),{type:'sawtooth',vol:v,a:.005,hold:d*.7,r:.08,lp:750});tone(t,m2f(m),{type:'sine',vol:v*.7,a:.005,hold:d*.7,r:.08})},
+    pad:(t,ms,d,v=.03)=>ms.forEach(m=>{tone(t,m2f(m),{type:'sawtooth',vol:v,a:.12,hold:Math.max(.05,d-.12),r:.35,lp:1300,wet:.35,det:-6});tone(t,m2f(m),{type:'triangle',vol:v,a:.12,hold:Math.max(.05,d-.12),r:.35,wet:.35,det:6})}),
+    keys:(t,ms,v=.05)=>ms.forEach(m=>{tone(t,m2f(m),{type:'triangle',vol:v,a:.004,hold:.04,r:.18,wet:.2});tone(t,m2f(m+12),{type:'sine',vol:v*.3,a:.002,hold:.01,r:.1})}),
+    marimba:(t,m,d,v=.15)=>{tone(t,m2f(m),{type:'sine',vol:v,a:.002,hold:.02,r:Math.min(.6,d+.15),wet:.25});tone(t,m2f(m)*4,{type:'sine',vol:v*.25,a:.001,hold:0,r:.06})},
+    lead:(t,m,d,v=.06)=>tone(t,m2f(m),{type:'square',vol:v,a:.01,hold:Math.max(.02,d*.7),r:.08,lp:2600,wet:.25}),
+    horn:(t,m,d,v=.07)=>{tone(t,m2f(m),{type:'sawtooth',vol:v,a:.05,hold:d*.8,r:.18,lp:1500,wet:.3});tone(t,m2f(m),{type:'square',vol:v*.4,a:.05,hold:d*.8,r:.18,lp:900,det:8})},
+    bell:(t,m,v=.3)=>{tone(t,m2f(m),{type:'sine',vol:v,a:.002,hold:.02,r:.7,wet:.3});tone(t,m2f(m)*2.76,{type:'sine',vol:v*.35,a:.001,hold:0,r:.25})},
+    glass:(t,v=.3)=>[2093,2637,3520].forEach((f,i)=>tone(t+i*.004,f,{type:'sine',vol:v*(i?.6:1),a:.001,hold:0,r:.45,wet:.3})),
+    wood:(t,f,v=.35)=>tone(t,f,{type:'sine',vol:v,a:.001,hold:.005,r:.06}),
+    tick:(t,v=.25)=>{tone(t,1500,{type:'square',vol:v*.5,a:.001,hold:0,r:.03});nz(t,{vol:v*.4,f:3000,r:.02})}
+  };
+}
+const CHD={C:[60,64,67],Am:[57,60,64],F:[57,60,65],G:[55,59,62],Em:[55,59,64],D:[54,57,62],F7:[57,60,63,65],Bb7:[56,58,62,65],C7:[55,58,60,64]};
+const ROOT={C:48,Am:45,F:41,G:43,Em:40,D:38,F7:41,Bb7:46,C7:48};
+// warm-up metronome (beats -8..-5) and count-in bells (-4..-1), shared by every song
+function songIntro(sy,B){for(let b=-8;b<-4;b++)sy.tick(B(b),.3);[79,79,79,84].forEach((m,i)=>sy.bell(B(-4+i),m,.16))}
+function songOutro(sy,B,E,chord,top){sy.crash(B(E));sy.kick(B(E),.9);sy.pad(B(E),CHD[chord],2.2,.05);sy.bass(B(E),ROOT[chord],1.6,.3);top.forEach(m=>sy.marimba(B(E),m,1.2,.12))}
+const MEL={
+  // offbeat marimba hook for the carpenter funk (original)
+  nail:[[.5,76],[1.5,79],[2.5,76],[3.5,74],[4.5,72],[5.5,74],[6.5,76],[7.5,74],[8.5,77],[9.5,76],[10.5,72],[11.5,69],[12.5,71],[13.5,74],[14.5,79],[15.5,77],
+        [16.5,76],[17.5,79],[18.5,84],[19.5,79],[20.5,76],[21.5,74],[22.5,72],[23.5,74],[24.5,77],[25.5,81],[26.5,79],[27.5,77],[28.5,76],[29.5,74],[30.5,71],[31.5,74]],
+  // lazy horn sighs in the response bars of the pub blues (original)
+  toast:[[4.67,72,.3],[5,69,1.8],[12.67,74,.3],[13,72,1.8],[20.67,76,.3],[21,74,1.2],[22.67,72,.9],[28.67,72,.3],[29,70,.9],[30,69,1.8]],
+  // bouncy march for the ping-pong rally (original)
+  pong:[[0,74,.4],[.5,71,.4],[1,67,.4],[2,71,.4],[2.5,74,.4],[3,79,.9],[4,76,.4],[4.5,74,.4],[5,72,.4],[6,74,1.4],
+        [8,72,.4],[8.5,71,.4],[9,69,.4],[10,72,.4],[10.5,76,.4],[11,74,.9],[12,72,.4],[12.5,71,.4],[13,69,.4],[14,67,1.4]]
+};
+const SONGS={
+  nail(sy,B,{hits,bars,E}){ // "목공소 셔플" — 92 BPM funk. The backbeat snare is left out wherever you hammer: your hammer is the snare.
+    const prog=['C','Am','F','G'],hs=new Set(hits);songIntro(sy,B);
+    for(let b=-8;b<0;b++){sy.kick(B(b),b<-4?.55:.75);sy.hat(B(b+.5),.08)}
+    sy.bass(B(-4),48,.4);sy.bass(B(-2.5),48,.25);sy.bass(B(-2),43,.4);sy.bass(B(-1),47,.3);
+    for(let bar=0;bar<bars;bar++){const c=prog[bar%4],r=ROOT[c],b0=bar*4;
+      sy.pad(B(b0),CHD[c],B(b0+4)-B(b0),.028);
+      sy.kick(B(b0),.85);sy.kick(B(b0+2),.75);if(bar%2)sy.kick(B(b0+2.5),.55);
+      for(let k=0;k<8;k++)sy.hat(B(b0+k/2),k%2?.09:.05);
+      [1,3].forEach(x=>{if(!hs.has(b0+x))sy.snare(B(b0+x),.26)});
+      if(bar%2)sy.clap(B(b0+3.5),.18);
+      [[0,r,.4],[1.5,r,.3],[2,r+7,.4],[3,r+12,.25],[3.5,r+10,.25]].forEach(([x,m,d])=>sy.bass(B(b0+x),m,d));
+    }
+    for(let rep=0;rep*32<bars*4;rep++)MEL.nail.forEach(([x,m])=>{const b=rep*32+x;if(b<bars*4)sy.marimba(B(b),m,.45)});
+    songOutro(sy,B,E,'C',[72,76,79]);
+  },
+  toast(sy,B,{bars,E}){ // "포차 블루스" — 84 BPM swing. Boss bars carry the clinks; your answer bars stay airy.
+    const prog=['F7','F7','Bb7','F7','C7','Bb7','F7','C7'],WALK={F7:[41,45,48,50],Bb7:[46,50,53,51],C7:[48,52,55,53]};songIntro(sy,B);
+    const sw=b=>{const f=b-Math.floor(b);return Math.floor(b)+(Math.abs(f-.5)<.01?2/3:f)};
+    for(let b=-8;b<0;b++){sy.ride(B(b),.05);sy.ride(B(sw(b+.5)),.035);sy.kick(B(b),.3)}
+    [41,45,48,50,41,45,48,52].forEach((m,i)=>sy.bass(B(-8+i),m,.8,.22));
+    for(let bar=0;bar<bars;bar++){const c=prog[bar%8],b0=bar*4,call=bar%2===0;
+      sy.pad(B(b0),CHD[c],B(b0+4)-B(b0),call?.018:.026);
+      WALK[c].forEach((m,i)=>sy.bass(B(b0+i),m,.85,.24));
+      [0,1,1.5,2,3,3.5].forEach(x=>sy.ride(B(b0+sw(x)),x%1?.035:.055));
+      [1,3].forEach(x=>sy.brush(B(b0+x),.08));for(let k=0;k<4;k++)sy.kick(B(b0+k),.22);
+      sy.keys(B(b0+sw(1.5)),CHD[c],call?.03:.045);sy.keys(B(b0+sw(3.5)),CHD[c],.035);
+    }
+    MEL.toast.forEach(([x,m,d])=>{if(x<bars*4)sy.horn(B(x),m,(B(x+d)-B(x)))});
+    songOutro(sy,B,E,'F7',[65,69,72]);sy.horn(B(E),65,1.6,.09);
+  },
+  pong(sy,B,{hits,bars,E}){ // "랠리 마치" — 96 BPM bouncy march with oom-pah bass.
+    const prog=['G','Em','C','D'],hs=new Set(hits);songIntro(sy,B);
+    for(let b=-8;b<0;b++){sy.kick(B(b),.6);sy.hat(B(b+.5),.08)}
+    [-4,-3,-2,-1].forEach((b,i)=>sy.bass(B(b),[43,50,43,50][i],.3));
+    for(let bar=0;bar<bars;bar++){const c=prog[bar%4],r=ROOT[c],b0=bar*4;
+      sy.pad(B(b0),CHD[c],B(b0+4)-B(b0),.022);
+      sy.kick(B(b0),.8);sy.kick(B(b0+2),.7);
+      for(let k=0;k<4;k++)sy.hat(B(b0+k+.5),.08);
+      [[0,r],[1,r+7],[2,r],[3,r+7]].forEach(([x,m])=>sy.bass(B(b0+x),m,.28,.24));
+      [1,3].forEach(x=>{if(!hs.has(b0+x))sy.keys(B(b0+x),CHD[c],.035)});
+    }
+    for(let rep=0;rep*16<bars*4;rep++)MEL.pong.forEach(([x,m,d])=>{const b=rep*16+x;if(b<bars*4)sy.lead(B(b),m+(rep%2?0:12)-12,(B(b+d)-B(b)),.05)});
+    songOutro(sy,B,E,'G',[67,71,74]);
+  }
+};
+const SONG_CACHE=new Map();
+function renderSong(v,p,cue){
+  const key=v+':'+p;if(SONG_CACHE.has(key))return SONG_CACHE.get(key);
+  const OAC=window.OfflineAudioContext||window.webkitOfflineAudioContext;if(!OAC)return Promise.reject(new Error('no offline audio'));
+  const spb=60/RV[v].bpm,hits=rhNotes(v,p),last=hits[hits.length-1];
+  const bars=Math.max(8,Math.ceil((last+1)/4)),E=bars*4;
+  const B=b=>SONG_PRE+(b+8)*spb;
+  const len=Math.ceil((B(E+4)+.6)*SONG_SR);
+  const pr=new Promise((res,rej)=>{try{
+    const ctx=new OAC(1,len,SONG_SR);const sy=songSynth(ctx);
+    SONGS[v](sy,B,{spb,hits,last,bars,E,p});cue(sy,B);
+    ctx.oncomplete=e=>res(e.renderedBuffer);
+    const r=ctx.startRendering();if(r&&r.then)r.then(res,rej);
+  }catch(e){rej(e)}});
+  SONG_CACHE.set(key,pr);if(SONG_CACHE.size>4)SONG_CACHE.delete(SONG_CACHE.keys().next().value);
+  pr.catch(()=>SONG_CACHE.delete(key));
+  return pr;
+}
+
+function songCue(v,p){
+  if(v==='toast'){const calls=toastPlan(p).calls;return(sy,B)=>{for(const b of calls)sy.glass(B(b),.34)}}
+  if(v==='pong'){const plan=pongPlan(p);return(sy,B)=>{for(const x of plan){sy.wood(B(x.o),880,.42);sy.wood(B(x.o+x.s/2),1560,.34)}}}
+  const hs=rhNotes('nail',p);return(sy,B)=>{for(const b of hs)sy.bell(B(b-1),96,.34)};
+}
+let PREF=Promise.resolve();
+function prefetchSong(v,p){if(!RV[v])return;const ps=p==null?[0,1]:[p];ps.forEach(q=>{if(SONG_CACHE.has(v+':'+q))return;PREF=PREF.then(()=>renderSong(v,q,songCue(v,q))).catch(()=>{})})}
+// Shared timing/scoring/broadcast core. Each variant only draws; its cue sounds are baked into the song.
+function rhCore(s,v,cue){
+  const r=s.r,bpm=RV[v].bpm,beat=60000/bpm,p=s.d.p||0,hitsB=rhNotes(v,p);
+  let T0=Infinity,state='load',src=null,buf=null;
+  const notes=hitsB.map(b=>({b,t:Infinity,j:null}));
+  const last=hitsB[hitsB.length-1];
+  let score=0,hits=0,combo=0,maxCombo=0,lastLive=0,done=false,off=null;const warm=[],cnt={P:0,G:0,O:0,M:0};
+  const est=()=>AC?Math.round(((AC.outputLatency||0)+(AC.baseLatency||0))*1000):0;
+  const offset=()=>off!=null?off:Math.max(0,Math.min(250,est()));
+  const calibrate=()=>{if(off!=null)return;if(warm.length>=2){const a=warm.slice().sort((x,y)=>x-y);off=Math.max(-60,Math.min(320,Math.round(a[Math.floor(a.length/2)])))}else off=Math.max(0,Math.min(250,est()))};
+  const start=()=>{if(state==='play'||state==='load')return;const ac=audio();
+    if(buf&&ac){if(ac.state!=='running'){state='wait';return}
+      try{src=ac.createBufferSource();src.buffer=buf;src.connect(ac.destination);const when=ac.currentTime+.12;src.start(when);
+        T0=performance.now()+(when-ac.currentTime)*1000+(SONG_PRE*1000+8*beat)}catch(e){T0=performance.now()+300+8*beat}}
+    else T0=performance.now()+300+8*beat;
+    notes.forEach(n=>n.t=T0+n.b*beat);state='play'};
+  renderSong(v,p,cue).then(b=>{buf=b;state='ready';if(AC&&AC.state==='running')start();else state='wait'})
+    .catch(()=>{buf=null;state='ready';if(AC&&AC.state==='running')start();else state='wait'});
   const pc=()=>Math.round(score/(notes.length*3)*100);
   const jstr=()=>notes.map(n=>n.j?JCODE[n.j]:'_').join('');
-  const cur=()=>(performance.now()-T0)/beat;            // audio-clock beat (what the speaker is told to play)
-  const vcur=()=>(performance.now()-offset()-T0)/beat;  // beat as the player hears it, for visuals
-  const phase=()=>{const c=cur();return c<-4.4?'warm':c<-.45?'count':'play'};
-  const pre=name=>{const c=cur();if(c<-8.3)return name;if(c<-4.4)return '박자에 맞춰 톡톡!';if(c<-.45)return String(Math.max(1,Math.ceil(-c)));return null};
-  const live=force=>{const now=performance.now();if(done||(!force&&now-lastLive<300))return;lastLive=now;send({r,sc:pc(),h:hits,j:jstr(),b:+cur().toFixed(2),v,done:false})};
-  if(ac){const base=ac.currentTime+(T0-performance.now())/1000,at=b=>base+b*beat/1000;
-    for(let k=-8;k<-4;k++)beep(1000,.06,'triangle',.28,at(k));
-    for(let k=-4;k<0;k++)beep(1400,.05,'square',.16,at(k));
-    const BASS=v==='toast'?[110,0,165,0,147,0,165,131]:v==='pong'?[98,147,0,147,131,0,147,0]:[98,0,98,147,0,131,0,147];
-    for(let h=0;h<=(last+2)*2;h++){const b=h/2;if(h%2===0)beep(70,.16,'sine',.42,at(b));else noise(.04,.1,6,at(b));const f=BASS[h%8];if(f)beep(f,.2,'triangle',.16,at(b))}
-    cueSounds(at);}
-  const tap=now=>{const c=(now-T0)/beat;
-    if(c<-4.4){const nb=Math.round(c);if(nb>=-8&&nb<=-5&&Math.abs(c-nb)<.45)warm.push(now-bt(nb));return{warm:true}}
+  const cur=()=>(performance.now()-T0)/beat;
+  const vcur=()=>(performance.now()-offset()-T0)/beat;
+  const pre=name=>{if(state==='load')return '음악 준비 중…';if(state!=='play')return '화면을 탭하면 시작!';const c=cur();if(c<-8.3)return name;if(c<-4.4)return '박자에 맞춰 톡톡!';if(c<-.45)return String(Math.max(1,Math.ceil(-c)));return null};
+  const live=force=>{const now=performance.now();if(state!=='play'||done||(!force&&now-lastLive<300))return;lastLive=now;send({r,sc:pc(),h:hits,j:jstr(),b:+cur().toFixed(2),v,done:false})};
+  const tap=now=>{
+    if(state!=='play'){if(state!=='load'){const ac=audio();if(ac&&ac.resume)ac.resume().then(start,start);else start()}return{warm:true,silent:true}}
+    const c=(now-T0)/beat;
+    if(c<-4.4){const nb=Math.round(c);if(nb>=-8&&nb<=-5&&Math.abs(c-nb)<.45)warm.push(now-(T0+nb*beat));return{warm:true}}
     if(c<-.45)return null;
     calibrate();const o=offset();let best=null;
     for(const n of notes){if(n.j)continue;const d=Math.abs(n.t+o-now);if(d<=WIN.MAX&&(!best||d<Math.abs(best.t+o-now)))best=n}
     if(!best)return null;const d=Math.abs(best.t+o-now);let p,txt;
     if(d<=WIN.P){p=3;txt='PERFECT'}else if(d<=WIN.G){p=2.4;txt='GREAT'}else{p=1.5;txt='GOOD'}
-    best.j=txt;score+=p;hits++;live(true);return{n:best,p:p===3?3:p===2.4?2:1,txt}};
-  const sweep=(now,cb)=>{if(cur()>-4.4)calibrate();const o=offset();for(const n of notes)if(!n.j&&now-(n.t+o)>WIN.MAX){n.j='miss';cb&&cb(n);live(true)}};
+    best.j=txt;score+=p;hits++;combo++;maxCombo=Math.max(maxCombo,combo);cnt[JCODE[txt]]++;
+    try{navigator.vibrate&&navigator.vibrate(p===3?18:10)}catch(e){}
+    live(true);return{n:best,p:p===3?3:p===2.4?2:1,txt}};
+  const sweep=(now,cb)=>{if(state!=='play')return;if(cur()>-4.4)calibrate();const o=offset();for(const n of notes)if(!n.j&&now-(n.t+o)>WIN.MAX){n.j='miss';combo=0;cnt.M++;cb&&cb(n);live(true)}};
   const finish=()=>{done=true;const v2=pc();send({r,sc:v2,h:hits,j:jstr(),b:last+2,v,done:true});return v2};
-  return{beat,T0,bt,notes,last,endT,pc,live,tap,sweep,finish,cur,vcur,phase,pre,offset,isDone:()=>done};
+  return{beat,notes,last,pc,live,tap,sweep,finish,cur,vcur,pre,offset,
+    get T0(){return T0},get endT(){return T0+last*beat+1100},get combo(){return combo},get stats(){return Object.assign({max:maxCombo},cnt)},
+    isDone:()=>done,stop(){try{src&&src.stop()}catch(e){}}};
 }
-function rhEndSign(sg,pc,good,bad){setSign(sg,pc>=85?good[0]:pc>=60?good[1]:pc>=35?'괜찮아!':bad,pc>=60?'flash':'bad');pc>=60?fanfare():womp()}
 function rhPreSign(core,sg,name,st){const t=core.pre(name);if(t==null){if(st.k&&st.pre){st.k='';st.pre=false;setSign(sg,'')}return false}if(st.k!==t){st.k=t;st.pre=true;setSign(sg,t,/^\d$/.test(t)?'flash':'')}return true}
+// per-frame juice: beat pulse on the scene, live combo counter
+function rhFrame(el,core){const sc=$('#sc',el),cb=$('#cb',el),c=core.vcur();
+  if(sc&&isFinite(c)){const on=c>-8.2&&c<core.last+1&&c-Math.floor(c)<.09;if(on!==sc._b){sc._b=on;sc.classList.toggle('beat',on)}}
+  if(cb){const t=core.combo>=3?`${core.combo} 콤보!`:'';if(cb.textContent!==t){cb.textContent=t;if(t){cb.classList.remove('pop');void cb.offsetWidth;cb.classList.add('pop')}}}}
+function rhKick(el){const sc=$('#sc',el);if(!sc)return;sc.classList.remove('kick');void sc.offsetWidth;sc.classList.add('kick')}
+// end of round: flavor line on the sign, rank stamp on the scene, judgement stats under it
+function rhFinish(el,core,pc,good,bad){
+  const sg=$('#sg',el),sc=$('#sc',el),ts=$('#ts',el),tt=$('#tt',el),st=core.stats;
+  setSign(sg,pc>=85?good[0]:pc>=60?good[1]:pc>=35?'괜찮아!':bad,pc>=60?'flash':'bad');pc>=60?fanfare():womp();
+  const rank=pc>=85?['최고야!','r1']:pc>=60?['좋아!','r2']:pc>=35?['괜찮아','r3']:['다시 도전!','r4'];
+  if(sc){const d=document.createElement('div');d.className='rank '+rank[1];d.textContent=rank[0];sc.appendChild(d)}
+  if(tt)tt.textContent=pc+'%';
+  if(ts)ts.textContent=`퍼펙트 ${st.P} · 그레이트 ${st.G} · 굿 ${st.O} · 놓침 ${st.M} · 최대 ${st.max}콤보`;
+}
 
 // Variant: nail — a "ding" cue rings, the nail drops in, and you hammer it exactly one beat later
 function rhNail(el,s){
   const c=myC(s),p=s.d.p||0;
-  const core=rhCore(s,'nail',at=>{for(const b of rhNotes('nail',p))beep(1760,.09,'sine',.24,at(b-1))});
+  const core=rhCore(s,'nail',songCue('nail',p));
   const beat=core.beat,SP=104/beat;
   const PX=120,PY=186,L=105,TH_HIT=-18*Math.PI/180,TH_UP=-82*Math.PI/180;
   const HX=PX+L*Math.cos(TH_HIT)-13*Math.sin(TH_HIT),HY=PY+L*Math.sin(TH_HIT)+13*Math.cos(TH_HIT),TOP=200;
@@ -1181,7 +1334,7 @@ function rhNail(el,s){
     <rect x="0" y="218" width="400" height="82" fill="#8a5a2b"/><rect x="0" y="214" width="400" height="8" fill="#a8743e" stroke="${INK}" stroke-width="3"/>
     <path d="M${HX-10} 246 l10 -14 l10 14Z" fill="#ffd64d" stroke="${INK}" stroke-width="2.5"/>
     <g id="pk"></g><g id="nl"></g><g id="hm"></g><g id="fx"></g></svg><div class="sign" id="sg">${RV.nail.n}</div></div>
-    <div class="hud"><span class="big num" id="tt">0%</span><span class="muted" id="ts">${RV.nail.hint}</span></div>`;
+    <div class="hud"><span class="big num" id="tt">0%</span><span class="combo" id="cb"></span><span class="muted" id="ts">${RV.nail.hint}</span></div>`;
   const $$=q=>$(q,el),sc=$$('#sc'),sg=$$('#sg'),tt=$$('#tt'),ts=$$('#ts'),ch=$$('#ch'),pk=$$('#pk'),nl=$$('#nl'),hm=$$('#hm'),fx=$$('#fx');
   const face=f=>{ch.innerHTML=chr({c,id:P.pid,hat:'helmet',face:f,noR:true}).replace('<svg class="chr"','<svg class="chr" x="20" y="64" width="140" height="182"')};face('focus');
   let raf,swingT=-1e9,fxs=[],lastFace='focus';const st={k:'',pre:false};
@@ -1200,15 +1353,15 @@ function rhNail(el,s){
     hm.innerHTML=`<g transform="rotate(${(th*180/Math.PI).toFixed(1)} ${PX} ${PY})"><path d="M${PX} ${PY} H${PX+52}" stroke="${INK}" stroke-width="16" stroke-linecap="round"/><path d="M${PX} ${PY} H${PX+52}" stroke="${c}" stroke-width="9" stroke-linecap="round"/><path d="M${PX+46} ${PY} H${PX+L}" stroke="${INK}" stroke-width="11" stroke-linecap="round"/><path d="M${PX+46} ${PY} H${PX+L}" stroke="#c98a4a" stroke-width="6" stroke-linecap="round"/><rect x="${PX+L-9}" y="${PY-15}" width="18" height="30" rx="3" fill="#8d93a8" stroke="${INK}" stroke-width="3"/></g>`;
     fxs=fxs.filter(f=>now-f.t<450);fx.innerHTML=fxs.map(f=>{const k=(now-f.t)/450;return `<g opacity="${1-k}" transform="translate(${HX} ${TOP-6}) scale(${.6+k*.8}) translate(${-HX} ${-(TOP-6)})">${f.big?star(HX,TOP-6,26,'#ffd64d'):''}<text x="${HX+(f.big?0:24)}" y="${TOP-40-k*20}" text-anchor="middle" font-family="Black Han Sans,sans-serif" font-size="${f.big?30:20}" fill="#fff" stroke="${INK}" stroke-width="5" paint-order="stroke">${f.txt}</text></g>`}).join('');
     rhPreSign(core,sg,RV.nail.n,st);
-    core.live();
-    if(now>core.endT&&!core.isDone()){const pc=core.finish();tt.textContent=pc+'%';ts.textContent=`정확도 ${pc}% · 제출 완료!`;setFace(pc>=60?'happy':pc>=35?'normal':'cry');rhEndSign(sg,pc,['장인 인증!','좋아!'],'못이 다 휘었다…')}
+    core.live();rhFrame(el,core);
+    if(now>core.endT&&!core.isDone()){const pc=core.finish();setFace(pc>=60?'happy':pc>=35?'normal':'cry');rhFinish(el,core,pc,['장인 인증!','좋아!'],'못이 다 휘었다…')}
     if(!core.isDone()||now<core.endT+3000)raf=requestAnimationFrame(draw)};
   raf=requestAnimationFrame(draw);
   sc.addEventListener('pointerdown',e=>{e.preventDefault();audio();if(core.isDone())return;const now=performance.now();swingT=now;const h=core.tap(now);
-    if(h&&h.warm){beep(1000,.05,'triangle',.2);fxs.push({t:now,txt:'톡',big:false});return}
+    if(h&&h.warm){if(h.silent)return;beep(1000,.05,'triangle',.2);fxs.push({t:now,txt:'톡',big:false});return}
     if(!h){beep(180,.06,'square',.12);fxs.push({t:now,txt:'텅',big:false});setFace('sweat');return}
-    setFace(h.p===3?'happy':h.p===2?'smug':'normal');if(st.k==='miss'){st.k='';setSign(sg,'')}noise(.1,.5,6);beep(h.p===3?440:300,.08,'square',.25);fxs.push({t:now,txt:h.p===1?'삐끗':'쾅!',big:h.p>1});tt.textContent=core.pc()+'%'});
-  return{stop(){cancelAnimationFrame(raf)}};
+    if(h.p>=2)rhKick(el);setFace(h.p===3?'happy':h.p===2?'smug':'normal');if(st.k==='miss'){st.k='';setSign(sg,'')}noise(.08,.5,7);beep(150,.1,'sine',.5);beep(h.p===3?1320:880,.06,'triangle',.2);fxs.push({t:now,txt:h.p===1?'삐끗':'쾅!',big:h.p>1});tt.textContent=core.pc()+'%'});
+  return{stop(){cancelAnimationFrame(raf);core.stop()}};
 }
 
 // Variant: boss toast call & response — the boss clinks a one-bar rhythm, you repeat it in the next bar
@@ -1220,12 +1373,12 @@ function rhToast(el,s){
     <div class="glass" id="gb" style="left:33%">${glassSVG()}</div><div class="glass" id="gm2" style="right:33%">${glassSVG()}</div>
     <div class="clinkfx" id="cf" hidden>짠!</div>
     <div class="sign" id="sg">${RV.toast.n}</div><div class="dots" id="dots"></div></div>
-    <div class="hud"><span class="big num" id="tt">0%</span><span class="muted" id="ts">${RV.toast.hint}</span></div>`;
+    <div class="hud"><span class="big num" id="tt">0%</span><span class="combo" id="cb"></span><span class="muted" id="ts">${RV.toast.hint}</span></div>`;
   const $$=q=>$(q,el),sg=$$('#sg'),tt=$$('#tt'),ts=$$('#ts'),boss=$$('#boss'),me=$$('#me'),gb=$$('#gb'),gm=$$('#gm2'),cf=$$('#cf'),dots=$$('#dots');
   const bossA=f=>{boss.innerHTML=chr({c:'#8d93a8',id:'boss',hair:'shine',glasses:true,face:f,arms:'down'})};
   const meA=f=>{me.innerHTML=chr({c,id:P.pid,face:f,flip:true})};bossA('smug');meA('focus');
   const clink=(g,good)=>{g.classList.remove('up');void g.offsetWidth;g.classList.add('up');if(good){cf.hidden=false;cf.classList.remove('pop');void cf.offsetWidth;cf.classList.add('pop')}};
-  const core=rhCore(s,'toast',at=>{for(const b of plan.calls){beep(2093,.1,'triangle',.2,at(b));beep(2637,.12,'triangle',.13,at(b)+.01)}});
+  const core=rhCore(s,'toast',songCue('toast',s.d.p||0));
   let callIdx=0,raf,lastFace='focus',playKey='';const st={k:'',pre:false};
   const setMe=f=>{if(f!==lastFace){lastFace=f;meA(f)}};
   const draw=()=>{const now=performance.now(),cb=core.vcur();
@@ -1240,15 +1393,15 @@ function rhToast(el,s){
           if(!call&&on){const n=core.notes.find(n=>n.b===bb);if(n&&n.j)cls+=n.j==='miss'?' miss':' hit'}
           if(Math.floor(inb%4)===x)cls+=' now';
           return `<i class="${cls}"></i>`}).join('')}}
-    core.live();
-    if(now>core.endT&&!core.isDone()){const pc=core.finish();tt.textContent=pc+'%';ts.textContent=`정확도 ${pc}% · 제출 완료!`;setMe(pc>=60?'happy':pc>=35?'normal':'cry');bossA(pc>=60?'happy':'sweat');rhEndSign(sg,pc,['부장님 감동!','좋아!'],'부장님 삐짐…');dots.innerHTML=''}
+    core.live();rhFrame(el,core);
+    if(now>core.endT&&!core.isDone()){const pc=core.finish();setMe(pc>=60?'happy':pc>=35?'normal':'cry');bossA(pc>=60?'happy':'sweat');rhFinish(el,core,pc,['부장님 감동!','좋아!'],'부장님 삐짐…');dots.innerHTML=''}
     if(!core.isDone()||now<core.endT+3000)raf=requestAnimationFrame(draw)};
   raf=requestAnimationFrame(draw);
   $$('#sc').addEventListener('pointerdown',e=>{e.preventDefault();audio();if(core.isDone())return;const now=performance.now();const h=core.tap(now);
-    if(h&&h.warm){beep(1000,.05,'triangle',.2);clink(gm,false);return}
+    if(h&&h.warm){if(h.silent)return;beep(1000,.05,'triangle',.2);clink(gm,false);return}
     if(!h){beep(300,.05,'triangle',.1);setMe('sweat');clink(gm,false);return}
-    clink(gm,h.p>1);beep(h.p===3?2349:1976,.12,'triangle',.22);setMe(h.p===3?'happy':h.p===2?'smug':'normal');if(playKey==='miss'){playKey='';bossA('smug')}tt.textContent=core.pc()+'%'});
-  return{stop(){cancelAnimationFrame(raf)}};
+    if(h.p>=2)rhKick(el);clink(gm,h.p>1);beep(h.p===3?2349:1976,.14,'sine',.24);beep(3136,.1,'sine',.12);setMe(h.p===3?'happy':h.p===2?'smug':'normal');if(playKey==='miss'){playKey='';bossA('smug')}tt.textContent=core.pc()+'%'});
+  return{stop(){cancelAnimationFrame(raf);core.stop()}};
 }
 function glassSVG(){return `<svg viewBox="0 0 40 56" aria-hidden="true"><path d="M6 6 h24 l-2 46 h-20Z" fill="#ffc53d" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/><path d="M4 8 q4 -8 12 -4 q6 -6 12 0 q8 -2 8 6 q-16 4 -32 -2Z" fill="#fff" stroke="${INK}" stroke-width="2.5"/><path d="M30 16 h5 q4 0 4 4 v12 q0 4 -4 4 h-6" fill="none" stroke="${INK}" stroke-width="3"/></svg>`}
 
@@ -1261,13 +1414,13 @@ function rhPong(el,s){
     <rect x="60" y="208" width="280" height="10" rx="2" fill="#2e7d4f" stroke="${INK}" stroke-width="3"/><path d="M200 208 V218" stroke="#fff" stroke-width="2"/>
     <path d="M90 218 V262 M310 218 V262" stroke="${INK}" stroke-width="5"/><rect x="198" y="182" width="4" height="26" fill="#eee" stroke="${INK}" stroke-width="1.5"/>
     <g id="op"></g><g id="pp"></g><g id="ball"></g><g id="fx"></g></svg><div class="sign" id="sg">${RV.pong.n}</div></div>
-    <div class="hud"><span class="big num" id="tt">0%</span><span class="muted" id="ts">${RV.pong.hint}</span></div>`;
+    <div class="hud"><span class="big num" id="tt">0%</span><span class="combo" id="cb"></span><span class="muted" id="ts">${RV.pong.hint}</span></div>`;
   const $$=q=>$(q,el),sg=$$('#sg'),tt=$$('#tt'),ts=$$('#ts'),opp=$$('#opp'),mee=$$('#mee'),op=$$('#op'),pp=$$('#pp'),ball=$$('#ball'),fx=$$('#fx');
   const nest=(svg,x,y)=>svg.replace('<svg class="chr"',`<svg class="chr" x="${x}" y="${y}" width="120" height="156"`);
   const oppA=f=>{opp.innerHTML=nest(chr({c:'#6a5c8f',id:'pongbot',hair:'spike',glasses:false,face:f,arms:'rfwd'}),-18,74)};
   const meA=f=>{mee.innerHTML=nest(chr({c,id:P.pid,face:f,arms:'rfwd',flip:true}),298,74)};oppA('focus');meA('focus');
   const paddle=(x,y,a,col)=>`<g transform="rotate(${a} ${x} ${y})"><rect x="${x-3}" y="${y}" width="6" height="18" rx="2" fill="#7a4b2a" stroke="${INK}" stroke-width="2"/><circle cx="${x}" cy="${y-6}" r="13" fill="${col}" stroke="${INK}" stroke-width="3"/></g>`;
-  const core=rhCore(s,'pong',at=>{for(const x of plan){beep(880,.05,'square',.18,at(x.o));beep(1560,.05,'square',.16,at(x.o+x.s/2))}});
+  const core=rhCore(s,'pong',songCue('pong',s.d.p||0));
   plan.forEach((x,i)=>{x.n=core.notes[i]});
   let raf,swingT=-1e9,oppT=-1e9,fxs=[],lastFace='focus',playKey='',oi=0;const st={k:'',pre:false};
   const setMe=f=>{if(f!==lastFace){lastFace=f;meA(f)}};
@@ -1291,15 +1444,15 @@ function rhPong(el,s){
     const bp=cb>=0?ballAt(cb):null;
     ball.innerHTML=bp?`<ellipse cx="${bp.x}" cy="212" rx="${6+Math.max(0,(206-bp.y))/14}" ry="2.5" fill="#0004"/><circle cx="${bp.x}" cy="${bp.y}" r="7" fill="#fff" stroke="${INK}" stroke-width="2.5"/>`:'';
     fxs=fxs.filter(f=>now-f.t<450);fx.innerHTML=fxs.map(f=>{const k=(now-f.t)/450;return `<g opacity="${1-k}">${f.big?star(296,150-k*20,18,'#ffd64d'):''}<text x="296" y="${128-k*24}" text-anchor="middle" font-family="Black Han Sans,sans-serif" font-size="22" fill="#fff" stroke="${INK}" stroke-width="5" paint-order="stroke">${f.txt}</text></g>`}).join('');
-    core.live();
-    if(now>core.endT&&!core.isDone()){const pc=core.finish();tt.textContent=pc+'%';ts.textContent=`정확도 ${pc}% · 제출 완료!`;setMe(pc>=60?'happy':pc>=35?'normal':'cry');oppA(pc>=60?'ko':'smug');rhEndSign(sg,pc,['탁구 국가대표!','좋아!'],'라켓을 놓쳤다…')}
+    core.live();rhFrame(el,core);
+    if(now>core.endT&&!core.isDone()){const pc=core.finish();setMe(pc>=60?'happy':pc>=35?'normal':'cry');oppA(pc>=60?'ko':'smug');rhFinish(el,core,pc,['탁구 국가대표!','좋아!'],'라켓을 놓쳤다…')}
     if(!core.isDone()||now<core.endT+3000)raf=requestAnimationFrame(draw)};
   raf=requestAnimationFrame(draw);
   $$('#sc').addEventListener('pointerdown',e=>{e.preventDefault();audio();if(core.isDone())return;const now=performance.now();swingT=now;const h=core.tap(now);
-    if(h&&h.warm){beep(760,.05,'square',.18);fxs.push({t:now,txt:'톡',big:false});return}
+    if(h&&h.warm){if(h.silent)return;beep(760,.05,'square',.18);fxs.push({t:now,txt:'톡',big:false});return}
     if(!h){beep(200,.05,'square',.1);setMe('sweat');return}
-    h.n.hb=core.vcur();beep(h.p===3?760:620,.06,'square',.22);noise(.05,.25,6);fxs.push({t:now,txt:h.p===1?'아슬':'팍!',big:h.p>1});setMe(h.p===3?'happy':h.p===2?'smug':'normal');if(playKey==='miss'){setSign(sg,'');playKey=''}tt.textContent=core.pc()+'%'});
-  return{stop(){cancelAnimationFrame(raf)}};
+    if(h.p>=2)rhKick(el);h.n.hb=core.vcur();beep(h.p===3?760:620,.06,'square',.22);noise(.05,.25,6);fxs.push({t:now,txt:h.p===1?'아슬':'팍!',big:h.p>1});setMe(h.p===3?'happy':h.p===2?'smug':'normal');if(playKey==='miss'){setSign(sg,'');playKey=''}tt.textContent=core.pc()+'%'});
+  return{stop(){cancelAnimationFrame(raf);core.stop()}};
 }
 
 // Spectator / waiting-phone mini lane for a rhythm player: extrapolates the player's beat between updates.
@@ -1454,7 +1607,7 @@ const PG={
 };
 PG.bomb=PG.watch;
 PG.vswatch=function(el,s){let cur=s;
-  const draw=s2=>{cur=s2;const v=s2.d.vs;if(!v)return;const idx=v.pairs.findIndex((pr,i)=>i>=v.mi&&pr.includes(P.pid));
+  const draw=s2=>{cur=s2;const v=s2.d.vs;if(!v)return;if(s2.g==='rhythm'&&s2.d.rv)prefetchSong(s2.d.rv);const idx=v.pairs.findIndex((pr,i)=>i>=v.mi&&pr.includes(P.pid));
     const hint=idx===v.mi&&v.mst==='vs'?'<b style="color:var(--bulb)">곧 내 차례! 폰을 잡고 준비하세요</b>':idx===v.mi&&v.mst==='win'?'내 경기 결과예요':idx>v.mi?`${idx-v.mi}경기 뒤에 내 차례예요`:'응원하세요!';
     el.innerHTML=`<div class="card grid">${vsHTML(s2,pid=>plvA(pid,s2),()=>draw(cur))}<p class="muted" style="margin:0;text-align:center">${hint}</p></div>`;
     if(idx===v.mi&&v.mst==='vs'&&draw.buzzed!==v.mi){draw.buzzed=v.mi;buzz();beep(660,.1,'square')}};
