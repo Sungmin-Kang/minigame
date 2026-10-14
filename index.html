@@ -586,7 +586,7 @@ function castHTML(){const set=[['duel',0],['mash',1],['rhythm',2],['liar',3],['q
 function renderIntro(){
   const ok=netOK();
   app.innerHTML=`<div class="wrap">
-  <div class="marquee"><div class="hdr"><div><div class="label">8인 야유회용 · 계정 없이 QR로 참가하는 미니게임 9종</div><h1>야유회 파티박스</h1></div>
+  <div class="marquee"><div class="hdr"><div><div class="label">8인 야유회용 · 계정 없이 QR로 참가하는 미니게임 9종 · 버전 10.14-4</div><h1>야유회 파티박스</h1></div>
   <div class="row">${ok?`<button class="btn go big" id="bmk">방 만들기</button><button class="btn big" id="bh">TV·노트북 진행 화면</button>`:`<span class="pill">연결 모듈을 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침하세요.</span>`}</div></div>${castHTML()}</div>
   ${ok?`<form class="card row" id="mkf" hidden style="justify-content:space-between"><label class="label" for="mknick">방장 닉네임 · 방장도 같이 플레이해요</label><div class="row" style="flex:1;min-width:240px;justify-content:flex-end"><input type="text" id="mknick" maxlength="12" placeholder="예: 강선임" autocomplete="off" style="max-width:200px"><button class="btn go">만들기</button></div><div style="flex-basis:100%">${kindPicker(store.get('pb_kind','bean'),TC[0])}</div></form>`:''}
   ${ok?`<form class="card row" id="jc" style="justify-content:space-between"><label class="label" for="jcode">참가자는 방장 폰의 QR을 찍거나, 방 코드를 입력하세요</label><div class="row" style="flex:1;min-width:240px;justify-content:flex-end"><input type="text" id="jcode" maxlength="6" placeholder="예: K7QMR" autocomplete="off" style="max-width:160px;text-transform:uppercase;font-family:var(--display);font-size:1.4rem;letter-spacing:.2em"><button class="btn go">입장</button><button type="button" class="btn" id="jw">관전</button></div></form>`:''}
