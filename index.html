@@ -31,6 +31,17 @@ img{max-width:100%}
 #app.hyb{padding-bottom:96px}
 .spec .btn,.spec .cfgcard,.spec [data-act],.spec label:has(#cdbl){display:none!important}
 .spec .tile{pointer-events:none}
+.spec .lstage{grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:16px}
+.spec .lcard .ln{font-size:1.15rem}
+.spec .lbub{font-size:1.3rem}
+.pill.live{background:var(--hot);color:#fff;border-color:var(--hot);font-weight:700;animation:bulbs 1s steps(2) infinite}
+.lstage{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:12px}
+.lcard{position:relative;background:var(--panel);border-radius:16px;padding:10px 8px 10px;display:flex;flex-direction:column;align-items:center;gap:2px;border-top:5px solid var(--tc);min-width:0;overflow:hidden}
+.lcard .ch{width:78%;max-width:120px}.lcard .ch svg{width:100%;height:auto}
+.lcard .ln{font-weight:700;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lcard .lcap{font-size:.85rem;color:var(--muted);font-variant-numeric:tabular-nums;min-height:1.3em}
+.lbub{position:absolute;top:6px;right:6px;z-index:2;background:#fff;color:var(--ink);font-family:var(--display);font-size:1rem;padding:2px 8px;border-radius:10px;border:2px solid var(--ink);animation:signpopb .3s cubic-bezier(.3,1.8,.6,1)}
+@keyframes signpopb{from{transform:scale(.3)}to{transform:scale(1)}}
 .bigcode{font-family:var(--display);font-size:3.2rem;letter-spacing:.2em;color:var(--bulb);line-height:1}
 [hidden]{display:none!important}
 body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;-webkit-tap-highlight-color:transparent}
@@ -481,7 +492,7 @@ function startSpectator(code,b){
   SPEC=true;app.classList.add('spec');
   H={cfg:{teams:4,games:ORDER.slice(),mini:'',fin:'',dbl:false},taps:{},raf:0,net:'wait',qr:null,qrFor:null,confirmReset:false};
   room=makeSpecNet(code,b);
-  room.on('st',d=>{const prev=S;S=d;H.cfg.games=Array.isArray(d.gl)?d.gl:ORDER.slice();specFx(prev,d);schedRender()});
+  room.on('st',d=>{const prev=S;S=d;watchSpin(d);H.cfg.games=Array.isArray(d.gl)?d.gl:ORDER.slice();specFx(prev,d);schedRender()});
   room.on('lv',d=>{if(!d||!d.on||typeof d.on!=='object')return;const now=Date.now();room.setPeers(Object.entries(d.on).map(([pid,v])=>({presence:{pid,n:Array.isArray(v)?String(v[0]).slice(0,12):'??',a:Array.isArray(v)&&v[1]&&typeof v[1]==='object'?v[1]:null},updatedAt:now})));schedRender()});
   setInterval(()=>{document.querySelectorAll('[data-cd]').forEach(el=>{const end=+el.dataset.cd;const x=Math.max(0,Math.ceil((end-Date.now())/1000));el.textContent=x>=60?Math.floor(x/60)+':'+String(x%60).padStart(2,'0'):x+'초'})},250);
   keepAwake();specWait();
@@ -654,12 +665,22 @@ function finishGame(){
 function lastTeams(){if(!S.res)return[];const tr=S.res.tr,mx=Math.max(...tr.map(x=>x[2]));if(mx===1)return[];return tr.filter(x=>x[2]===mx).map(x=>x[0])}
 
 /* roulette overlay */
+// Host spins: the roulette (list, landing value, who it's for) is published in the state so phones and spectators play the same spin.
 function spin(list,label,sub,cb,t){
-  const ov=$('#ov'),el=$('#ovt'),b=$('#ovb'),A=$('#ova');$('#ovl').textContent=label;$('#ovs').textContent=sub||'';A.innerHTML=t!=null?chr({c:TC[t],id:'pen'+t,face:'sweat',arms:'up'}):'';b.hidden=true;ov.hidden=false;
-  const final=pick(list);let i=0,delay=50;
-  (function step(){el.textContent=i>=24?final:list[i%list.length];beep(400+(i%5)*60,.05,'square',.12);i++;
-    if(i<=24){delay*=1.1;setTimeout(step,delay)}else{womp();if(t!=null)A.innerHTML=chr({c:TC[t],id:'pen'+t,face:'cry'});b.hidden=false;b.onclick=()=>{ov.hidden=true;cb(final)};b.focus()}})();
+  const final=pick(list);let show=shuffle(list).slice(0,12);if(!show.includes(final))show[show.length?show.length-1:0]=final;
+  S.spin={id:rid(),list:show,final,label,sub:sub||'',t:t??null,v:S.v+1};setS({});
+  spinAnim(S.spin,()=>cb(final));
 }
+let SEEN_SPIN=null;
+function spinAnim(sp,done){
+  SEEN_SPIN=sp.id;const ov=$('#ov'),el=$('#ovt'),b=$('#ovb'),A=$('#ova'),list=sp.list.length?sp.list:[sp.final],t=sp.t;
+  $('#ovl').textContent=sp.label;$('#ovs').textContent=sp.sub;A.innerHTML=t!=null?chr({c:TC[t],id:'pen'+t,face:'sweat',arms:'up'}):'';b.hidden=true;ov.hidden=false;
+  let i=0,delay=50;
+  (function step(){el.textContent=i>=24?sp.final:list[i%list.length];beep(400+(i%5)*60,.05,'square',.12);i++;
+    if(i<=24){delay*=1.1;setTimeout(step,delay)}else{womp();if(t!=null)A.innerHTML=chr({c:TC[t],id:'pen'+t,face:'cry'});
+      if(done){b.hidden=false;b.onclick=()=>{ov.hidden=true;done()};b.focus()}else setTimeout(()=>{if(SEEN_SPIN===sp.id)ov.hidden=true},2600)}})();
+}
+function watchSpin(s){if(!s||!s.spin||s.spin.id===SEEN_SPIN)return;if(typeof s.spin.v==='number'&&s.spin.v<s.v-1){SEEN_SPIN=s.spin.id;return}if(PR)return;spinAnim(s.spin,null)}
 function lines(s){return s.split('\n').map(x=>x.trim()).filter(Boolean)}
 
 /* host timers */
@@ -683,7 +704,7 @@ function qrFor(){const c=hostCode()+':'+NET_B;if(H.qrFor!==c){H.qrFor=c;H.qr=qrI
 function netPill(){return H.net==='ok'?'':`<span class="pill" style="border-color:var(--hot)">${H.net==='re'?'중계 서버 재접속 중…':'중계 서버 연결 중…'}</span>`}
 function hostHeader(){
   const on=online(),n=Object.keys(on).length;
-  return `<div class="marquee hdr"><div><div class="label">${S.ph==='lobby'?'대기실':S.g?GAMES[S.g].k+(S.dbl?' · 점수 2배':''):'점수판'}</div><h1>${S.g&&['intro','play','res'].includes(S.ph)?esc(GAMES[S.g].n):'야유회 파티박스'}</h1></div><div class="row">${SPEC?`<span class="pill">관전 중 · 탭하면 효과음 켜짐</span>${H.net==='ok'?'':netPill()}`:netPill()}<span class="pill">방 코드 <b class="disp" style="letter-spacing:.15em;color:var(--bulb)">${esc(hostCode())}</b></span><span class="pill"><span class="dot" style="background:var(--ok)"></span>${n}명 접속</span>${S.done.length?`<span class="pill">${S.done.length}/${H.cfg.games.length} 게임 완료</span>`:''}</div></div>`;
+  return `<div class="marquee hdr"><div><div class="label">${S.ph==='lobby'?'대기실':S.g?GAMES[S.g].k+(S.dbl?' · 점수 2배':''):'점수판'}</div><h1>${S.g&&['intro','play','res'].includes(S.ph)?esc(GAMES[S.g].n):'야유회 파티박스'}</h1></div><div class="row">${SPEC?`${S.ph==='play'?'<span class="pill live">LIVE</span>':''}<span class="pill">관전 중 · 탭하면 효과음 켜짐</span>${H.net==='ok'?'':netPill()}`:netPill()}<span class="pill">방 코드 <b class="disp" style="letter-spacing:.15em;color:var(--bulb)">${esc(hostCode())}</b></span><span class="pill"><span class="dot" style="background:var(--ok)"></span>${n}명 접속</span>${S.done.length?`<span class="pill">${S.done.length}/${H.cfg.games.length} 게임 완료</span>`:''}</div></div>`;
 }
 function hostRender(){
   if(!S||PR)return;
@@ -746,6 +767,33 @@ function hIntro(){
   return `<div class="card grid">${heroHTML(S.g)}<div class="label">게임 방법 · 폰에도 같은 설명이 떠요</div><ol class="rules">${g.rules.map(r=>`<li>${esc(r)}</li>`).join('')}</ol>
   <div class="row"><button class="btn go big" data-act="start">시작!</button><button class="btn" data-act="board">점수판으로</button></div></div>${scoreHTML(false)}`;
 }
+/* ---------- live stage: every player's character acting out their current play ---------- */
+const LIVEP={};
+function liveMark(pid,key){const now=Date.now(),e=LIVEP[pid];if(!e||e.key!==key||e.r!==S.r){LIVEP[pid]={key,t:now,r:S.r};if(e&&e.r===S.r){clearTimeout(liveMark.tm);liveMark.tm=setTimeout(()=>schedRender(),1400)}return e&&e.r===S.r}return now-e.t<1300}
+function liveCard(pid,a){
+  const g=S.g,d=S.d||{},t=S.pl[pid].t,base={c:TC[t],id:pid};let o={},cls='',bub='',cap='',bar=null;
+  if(g==='duel'){const ms=a&&Array.isArray(a.ms)?a.ms:[],last=ms[ms.length-1],fresh=liveMark(pid,ms.length);o={hat:'cowboy',holster:true,face:'focus'};cls='tremble';cap=ms.length?`${ms.length} / 3`:'대기';
+    if(a&&a.done){const avg=Math.round(ms.reduce((x,y)=>x+y,0)/ms.length),good=avg<=420;o=Object.assign(o,{face:good?'happy':'cry',arms:good?'up':'down',drawn:true});cls=good?'jump':'';cap=`평균 ${avg}ms`}
+    else if(fresh&&last!=null){if(last>=1000&&last<1500){o=Object.assign(o,{face:'shock',drawn:true,hatfly:true,smoke:true});cls='';bub='오발!'}else if(last<=380){o=Object.assign(o,{face:'smug',arms:'rfwd',hold:'gun',drawn:true,bang:true});cls='';bub=`탕! ${last}ms`}else{o=Object.assign(o,{face:'ko',stars:true,drawn:true});cls='fall';bub=`${last}ms`}}}
+  else if(g==='mash'){const c=a&&a.c||0,fresh=liveMark(pid,c);o={hat:'party',arms:'hold',hold:'bottle',face:c>30?'shock':'focus'};cls=fresh&&c?'shake':'';cap=`${c}회`;bar=Math.min(1,c/55);
+    if(a&&a.done){o.face=c>=55?'happy':'cry';o.popped=c>=55;cls=c>=55?'jump1':'';bub=c>=55?'뻥!':'피식…'}}
+  else if(g==='stop'){o={arms:'rfwd',hold:'bone',face:'smug'};cap='세는 중…';cls='tremble';
+    if(a&&a.done&&typeof a.t==='number'){const df=Math.abs(a.t-10);liveMark(pid,a.t);o={face:df<=.3?'happy':a.t<10?'sweat':'shock',arms:df<=.3?'up':'rfwd',hold:df<=.3?undefined:'bone'};cls=df<=.3?'jump':'';bub=`${a.t.toFixed(2)}초`;cap=df<=.3?'완벽!':a.t<10?'너무 빨라':'너무 늦어'}}
+  else if(g==='rhythm'){const sc=a&&typeof a.sc==='number'?a.sc:null,fresh=liveMark(pid,a&&a.h||0)&&!!(a&&a.h);o={hat:'helmet',hold:'hammer',arms:fresh?'rfwd':'up',face:'focus'};cap=sc==null?'준비':`${sc}%`;if(fresh&&sc!=null){bub='쾅!';o.face='happy'}
+    if(a&&a.done){o.face=sc>=70?'happy':sc>=40?'normal':'cry';o.arms=sc>=70?'up':'down';cls=sc>=70?'jump':'';bub=sc>=85?'장인!':''}}
+  else if(g==='nunchi'){const log=d.log||[];const i=log.findIndex(x=>x.includes(pid));const grp=log[i];o={face:'sweat'};cls='tremble';cap='눈치 보는 중';
+    if(grp){const last=grp.includes('__last');if(last){o={face:'cry'};cls='';bub='꼴찌';cap='못 일어남'}else if(grp.length>1){o={face:'ko',stars:true};cls='fall';bub='쾅!';cap='겹침'}else{o={face:'happy',arms:'up'};cls=d.end?'jump':'jump1';bub=`${i+1}!`;cap='성공'}}}
+  else if(g==='balance'){const v=a&&a.v?a.v[d.qi]:undefined;const voted=v===0||v===1;o={face:voted?'normal':'sweat',arms:voted?'up':'down'};cap=voted?'선택 완료':'고민 중…';
+    if(d.rev&&d.cnt&&voted){const win=d.cnt[v]>=d.cnt[1-v];o={face:win?'happy':'sweat',arms:win?'up':'down'};cls=win?'jump':'tremble';bub='AB'[v];cap=win?'다수파':'해명하세요!'}}
+  else if(g==='quiz'){const Q=QUIZ[d.qs[d.qi]],x=a&&a.q?a.q[d.qi]:null;o={arms:'rfwd',hold:'mic',face:x?'smug':'focus'};cap=x?'제출':'생각 중…';
+    if(d.rev){const ok=x&&x[0]===Q[2];o=ok?{face:'happy',arms:'up'}:{face:x?'cry':'sweat',wet:!!x};cls=ok?'jump':'';bub=ok?'정답':x?'땡':'';cap=x?(ok?`${(x[1]/1000).toFixed(1)}초`:'오답'):'시간 초과'}}
+  else if(g==='liar'){const voted=a&&a.vote;o={hat:'detective',face:'focus'};cap=d.st==='vote'?(voted?'투표 완료':'고민 중…'):'';
+    if(d.tally&&d.tally[pid])bub=`${d.tally[pid]}표`;
+    if((d.st==='guess'||d.st==='done')&&pid===d.liar){o={hat:d.st==='guess'?undefined:'disguise',face:d.st==='guess'?'shock':d.out==='caught'?'cry':'smug',arms:d.out==='escaped'?'up':'down'};cap='라이어'}}
+  return `<div class="lcard ${tc(t)}">${bub?`<div class="lbub">${esc(bub)}</div>`:''}<div class="ch ${cls}">${chr(Object.assign(base,o))}</div><div class="ln">${esc(S.pl[pid].n)}</div><div class="lcap">${esc(cap)}</div>${bar!=null?`<div class="bar" style="width:100%;height:8px"><i style="width:${bar*100}%"></i></div>`:''}</div>`;
+}
+function liveStage(){const on=online();const ps=activePids().sort((x,y)=>S.pl[x].t-S.pl[y].t);if(!ps.length)return'';return `<div class="lstage">${ps.map(pid=>liveCard(pid,inp(pid,on))).join('')}</div>`}
+
 function progressCards(fn){
   const on=online(),hat=ART[S.g]&&ART[S.g].hat&&ART[S.g].hat!=='afro'?{hat:ART[S.g].hat}:{};
   return `<div class="players">${activePids().map(pid=>{const a=inp(pid,on);const [txt,ok,face]=fn(a,pid);return`<div class="pc ${tc(S.pl[pid].t)} ${ok?'ok':''}">${av(pid,S.pl[pid].t,face||(ok?'happy':'focus'),hat)}<span class="n">${esc(S.pl[pid].n)}</span><span class="s">${txt}</span></div>`}).join('')}</div>`;
@@ -756,8 +804,8 @@ function hPlay(){
   const endBtn=`<button class="btn go big" data-act="finish">결과 집계</button><button class="btn" data-act="board">취소하고 점수판으로</button>`;
   if(['duel','stop','rhythm'].includes(g)){
     const [k,n]=doneCount();
-    return `<div class="card grid">${heroHTML(g)}<div class="stagebig">${k===n&&n?'모두 완료!':'폰을 보세요!'}</div><p class="muted" style="text-align:center;margin:0">완료 ${k} / ${n}명</p>
-    ${progressCards(a=>a&&a.done?[g==='duel'?fmt('duel',a.ms.reduce((x,y)=>x+y,0)/a.ms.length):g==='stop'?a.t.toFixed(2)+'초':a.sc+'%',true]:['진행 중',false])}
+    return `<div class="card grid"><div class="stagebig">${k===n&&n?'모두 완료!':g==='duel'?'결투 진행 중!':g==='stop'?'다들 속으로 세는 중…':'쾅! 쾅! 쾅!'}</div><p class="muted" style="text-align:center;margin:0">완료 ${k} / ${n}명</p>
+    ${liveStage()}
     <div class="row">${endBtn}</div></div>`;
   }
   if(g==='mash'){
@@ -765,12 +813,13 @@ function hPlay(){
     const mx=Math.max(30,...tot);const [k,n]=doneCount();
     return `<div class="card grid"><div class="stagebig">흔들어! 흔들어!</div>
     ${tot.map((v,t)=>`<div class="${tc(t)} grid" style="gap:4px"><div class="row" style="justify-content:space-between"><b style="color:var(--tc)">${esc(S.tm[t].n)}팀</b><span class="num">${v.toFixed(1)}회 평균</span></div><div class="bar"><i style="width:${v/mx*100}%"></i></div></div>`).join('')}
-    <p class="muted" style="margin:0">완료 ${k} / ${n}명</p><div class="row">${endBtn}</div></div>`;
+    ${liveStage()}<p class="muted" style="margin:0">완료 ${k} / ${n}명</p><div class="row">${endBtn}</div></div>`;
   }
   if(g==='nunchi'){
     const log=d.log||[];const left=activePids().filter(p=>!log.some(gp=>gp.includes(p)));
     return `<div class="card grid"><div class="stagebig">${d.end?'끝!':'벌떡 일어나며 외치세요!'}</div>
     <div class="nlog">${log.map((gp,i)=>{const last=gp.includes('__last');const ps=gp.filter(p=>p!=='__last');const bad=last||ps.length>1;return`<div class="nb ${bad?'bad':''}">${ps.map(p=>av(p,S.pl[p]?S.pl[p].t:-1,bad?(last?'cry':'ko'):'happy',bad&&!last?{stars:true}:{})).join('')}<b>${last?'꼴찌':i+1}</b><span>${ps.map(p=>esc(S.pl[p]?S.pl[p].n:'?')).join(', ')}${bad?(last?' · 못 일어남':' · 쾅!'):''}</span></div>`}).join('')}</div>
+    ${liveStage()}
     ${left.length&&!d.end?`<p class="muted" style="margin:0">아직 앉아 있는 사람: ${left.map(p=>esc(S.pl[p].n)).join(', ')}</p>`:''}
     <div class="row">${d.end?endBtn:`<button class="btn" data-act="nend">여기서 끝내기</button><button class="btn" data-act="board">취소하고 점수판으로</button>`}</div></div>`;
   }
@@ -779,6 +828,7 @@ function hPlay(){
     return `<div class="card grid"><div class="label">질문 ${d.qi+1} / ${d.qs.length}</div>
     <div class="choices"><div class="choice ${d.rev&&c[0]>=c[1]?'right':''}">A. ${esc(q[0])}</div><div class="choice ${d.rev&&c[1]>=c[0]?'right':''}">B. ${esc(q[1])}</div></div>
     ${d.rev?`<div class="vsbar"><div style="flex:${c[0]||.001};background:#2c5f9e">${c[0]}명</div><div style="flex:${c[1]||.001};background:#9e3348">${c[1]}명</div></div><p style="margin:0">소수파 해명 타임! ${c[0]===c[1]?'(동점이라 모두 1점)':''}</p>`:`<p class="muted" style="margin:0">투표 ${tot} / ${act}명</p>`}
+    ${liveStage()}
     <div class="row">${!d.rev?`<button class="btn go big" data-act="brev">결과 공개</button>`:d.qi<d.qs.length-1?`<button class="btn go big" data-act="bnext">다음 질문</button>`:endBtn}</div></div>`;
   }
   if(g==='quiz'){
@@ -786,7 +836,8 @@ function hPlay(){
     return `<div class="card grid"><div class="row" style="justify-content:space-between"><span class="label">문제 ${d.qi+1} / ${d.qs.length}</span>${d.rev?'':`<span class="pill num" data-cd="${d.qt+15000}">15초</span>`}</div>
     <div class="stagebig" style="font-size:clamp(1.6rem,4vw,2.8rem)">${esc(q[0])}</div>
     <div class="choices">${q[1].map((o,i)=>`<div class="choice ${d.rev&&i===q[2]?'right':''}">${i+1}. ${esc(o)}</div>`).join('')}</div>
-    ${d.rev?progressCards(a=>{const x=a&&a.q?a.q[d.qi]:null;const ok=x&&x[0]===q[2];return[x?(ok?'정답':'오답'):'무응답',ok,ok?'happy':'cry']}):`<p class="muted" style="margin:0">답변 ${n} / ${act.length}명</p>`}
+    ${d.rev?'':`<p class="muted" style="margin:0">답변 ${n} / ${act.length}명</p>`}
+    ${liveStage()}
     <div class="row">${!d.rev?`<button class="btn" data-act="qrev">정답 공개</button>`:d.qi<d.qs.length-1?`<button class="btn go big" data-act="qnext">다음 문제</button>`:endBtn}</div></div>`;
   }
   if(g==='liar'){
@@ -795,7 +846,7 @@ function hPlay(){
       <p style="text-align:center;margin:0">폰에서 내 카드를 확인하고, 한 사람씩 제시어를 한 문장으로 설명하세요.</p><div class="stagebig num" data-cd="${d.tt+180000}" style="color:var(--bulb)">3:00</div>
       <div class="row"><button class="btn go big" data-act="lvote">투표 시작</button><button class="btn" data-act="board">취소하고 점수판으로</button></div></div>`;
     const voted=act.filter(p=>{const a=inp(p,on);return a&&a.vote}).length;
-    if(d.st==='vote')return `<div class="card grid"><div class="stagebig">라이어는 누구?</div><p class="muted" style="text-align:center;margin:0">투표 ${voted} / ${act.length}명</p><div class="row"><button class="btn go big" data-act="lrev">개표!</button></div></div>`;
+    if(d.st==='vote')return `<div class="card grid"><div class="stagebig">라이어는 누구?</div><p class="muted" style="text-align:center;margin:0">투표 ${voted} / ${act.length}명</p>${liveStage()}<div class="row"><button class="btn go big" data-act="lrev">개표!</button></div></div>`;
     const liarN=S.pl[d.liar]?S.pl[d.liar].n:'?',word=LIAR[d.cat][d.w],lt=S.pl[d.liar]?S.pl[d.liar].t:0;
     const rows=Object.entries(d.tally||{}).sort((a,b)=>b[1]-a[1]);
     return `<div class="card grid"><div class="label">개표 결과</div><div class="players">${rows.map(([p,v])=>`<div class="pc ${tc(S.pl[p]?S.pl[p].t:-1)}">${av(p,S.pl[p]?S.pl[p].t:-1,'sweat')}<span class="n">${esc(S.pl[p]?S.pl[p].n:'?')}</span><span class="s">${v}표</span></div>`).join('')||'<span class="muted">투표 없음</span>'}</div>
@@ -884,7 +935,7 @@ function startPlayer(){
   const pid=getPid();
   P={pid,n:store.get('pb_nick',''),S:null,ep:null,v:-1,joined:false,game:null,key:null};
   PNET=PNET||room;
-  PNET.on('st',m=>{const s=m.data;if(!s||typeof s!=='object'||!s.e)return;if(s.e===P.ep&&s.v<=P.v)return;P.ep=s.e;P.v=s.v;P.S=s;pRender()});
+  PNET.on('st',m=>{const s=m.data;if(!s||typeof s!=='object'||!s.e)return;if(s.e===P.ep&&s.v<=P.v)return;P.ep=s.e;P.v=s.v;P.S=s;if(!HYBRID)watchSpin(s);pRender()});
   PNET.onConnection(c=>{P.conn=c;const el=$('#conn');if(el)el.hidden=c});
   if(P.n)join(P.n);else pRender();
 }
@@ -1020,7 +1071,8 @@ const PG={
       const BASS=[98,0,98,147,0,131,0,147];
       for(let h=0;h<=(last+2)*2;h++){const b=h/2;if(h%2===0)beep(70,.16,'sine',.45,at(b));else noise(.04,.12,6,at(b));const f=BASS[h%8];if(f)beep(f,.2,'triangle',.18,at(b))}
       for(const n of notes)beep(1760,.09,'sine',.22,at(n.b-1));}
-    let score=0,raf,done=false,swingT=-1e9,fxs=[],lastFace='focus';
+    let score=0,raf,done=false,swingT=-1e9,fxs=[],lastFace='focus',lastLive=0,hits=0;
+    const live=hit=>{if(hit)hits++;const now=performance.now();if(done||now-lastLive<350)return;lastLive=now;send({r,sc:Math.round(score/(notes.length*3)*100),h:hits,done:false})};
     const setFace=f=>{if(f!==lastFace){lastFace=f;face(f)}};
     const nailSVG=(x,state,drop)=>{const y0=HY-drop;
       if(state==='in')return `<ellipse cx="${x}" cy="${TOP}" rx="10" ry="3.5" fill="#8d93a8" stroke="${INK}" stroke-width="2.5"/>`;
@@ -1029,7 +1081,7 @@ const PG={
     const draw=()=>{const now=performance.now();
       const off=(now*SP)%80;pk.innerHTML=`<g transform="translate(${-off} 0)"><rect x="0" y="${TOP}" width="560" height="16" fill="#d9a86a" stroke="${INK}" stroke-width="3"/>${[0,80,160,240,320,400,480].map(x=>`<path d="M${x} ${TOP} v16" stroke="${INK}" stroke-width="2"/><path d="M${x+14} ${TOP+8} h40" stroke="#b07f45" stroke-width="2"/>`).join('')}</g>`;
       let h='';for(const n of notes){if(now<n.cue)continue;const x=HX+(n.t-now)*SP;if(x<-30||x>430)continue;const k=Math.min(1,(now-n.cue)/160);
-        if(!n.j&&n.t-now<-230){n.j='miss';setFace('shock');setSign(sg,'놓쳤다!','bad');tt.textContent=Math.round(score/(notes.length*3)*100)+'%'}
+        if(!n.j&&n.t-now<-230){n.j='miss';setFace('shock');setSign(sg,'놓쳤다!','bad');tt.textContent=Math.round(score/(notes.length*3)*100)+'%';live(false)}
         h+=nailSVG(x,n.j==='miss'?'miss':n.j==='GOOD'?'bent':n.j?'in':'up',(1-k)*70)}
       nl.innerHTML=h;
       const e=now-swingT;let th=TH_UP;if(e<70)th=TH_HIT;else if(e<240)th=TH_HIT+(TH_UP-TH_HIT)*((e-70)/170);
@@ -1046,7 +1098,7 @@ const PG={
       let best=null;for(const n of notes){if(n.j)continue;const d=Math.abs(n.t-now);if(d<=230&&(!best||d<Math.abs(best.t-now)))best=n}
       if(!best){beep(180,.06,'square',.12);fxs.push({t:now,txt:'텅',big:false});setFace('sweat');return}
       const d=Math.abs(best.t-now);let p,txt,f;if(d<=70){p=3;txt='PERFECT';f='happy'}else if(d<=140){p=2;txt='GREAT';f='smug'}else{p=1;txt='GOOD';f='normal'}
-      best.j=txt;score+=p;setFace(f);if(sg.textContent==='놓쳤다!')setSign(sg,'');noise(.1,.5,6);beep(p===3?440:300,.08,'square',.25);fxs.push({t:now,txt:p===1?'삐끗':'쾅!',big:p>1});
+      best.j=txt;score+=p;setFace(f);if(sg.textContent==='놓쳤다!')setSign(sg,'');noise(.1,.5,6);beep(p===3?440:300,.08,'square',.25);fxs.push({t:now,txt:p===1?'삐끗':'쾅!',big:p>1});live(true);
       tt.textContent=Math.round(score/(notes.length*3)*100)+'%'});
     return{stop(){cancelAnimationFrame(raf)}}
   },
